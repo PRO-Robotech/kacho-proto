@@ -207,10 +207,10 @@ const file_kacho_cloud_compute_v1_host_type_service_proto_rawDesc = "" +
 	"\x15ListHostTypesResponse\x12?\n" +
 	"\n" +
 	"host_types\x18\x01 \x03(\v2 .kacho.cloud.compute.v1.HostTypeR\thostTypes\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken2\x9a\x03\n" +
-	"\x0fHostTypeService\x12\xc5\x01\n" +
-	"\x03Get\x12*.kacho.cloud.compute.v1.GetHostTypeRequest\x1a .kacho.cloud.compute.v1.HostType\"p\x8a\xb5\x18\x16compute.host_types.get\x92\xb5\x18\x06viewer\x9a\xb5\x18\x17\n" +
-	"\aproject\x12\fhost_type_id\xa2\xb5\x18\x012\x82\xd3\xe4\x93\x02&\x12$/compute/v1/hostTypes/{host_type_id}\x12\xbe\x01\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken2\xa4\x03\n" +
+	"\x0fHostTypeService\x12\xcf\x01\n" +
+	"\x03Get\x12*.kacho.cloud.compute.v1.GetHostTypeRequest\x1a .kacho.cloud.compute.v1.HostType\"z\x8a\xb5\x18\x16compute.host_types.get\x92\xb5\x18\x06viewer\x9a\xb5\x18!\n" +
+	"\x11compute_host_type\x12\fhost_type_id\xa2\xb5\x18\x012\x82\xd3\xe4\x93\x02&\x12$/compute/v1/hostTypes/{host_type_id}\x12\xbe\x01\n" +
 	"\x04List\x12,.kacho.cloud.compute.v1.ListHostTypesRequest\x1a-.kacho.cloud.compute.v1.ListHostTypesResponse\"Y\x8a\xb5\x18\x19compute.host_typeses.list\x92\xb5\x18\x06viewer\x9a\xb5\x18\f\n" +
 	"\aproject\x12\x01*\xa2\xb5\x18\x012\x82\xd3\xe4\x93\x02\x17\x12\x15/compute/v1/hostTypesBMZKgithub.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/compute/v1;computev1b\x06proto3"
 

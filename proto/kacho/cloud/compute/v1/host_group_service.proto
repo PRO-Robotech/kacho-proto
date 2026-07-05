@@ -28,7 +28,7 @@ service HostGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.host_groups.get";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_host_group"
       from_request_field: "host_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -73,7 +73,7 @@ service HostGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.host_groups.update";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_host_group"
       from_request_field: "host_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -89,7 +89,7 @@ service HostGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.host_groups.delete";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_host_group"
       from_request_field: "host_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -101,7 +101,7 @@ service HostGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.host_group_operationses.listOperations";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_host_group"
       from_request_field: "host_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -113,7 +113,7 @@ service HostGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.host_group_instanceses.listInstances";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_host_group"
       from_request_field: "host_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -125,7 +125,7 @@ service HostGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.host_group_hostses.listHosts";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_host_group"
       from_request_field: "host_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -141,7 +141,7 @@ service HostGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.host_group_hosts.updateHost";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_host_group"
       from_request_field: "host_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";

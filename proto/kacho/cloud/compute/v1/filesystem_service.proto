@@ -27,7 +27,7 @@ service FilesystemService {
     option (kacho.iam.authz.v1.permission)        = "compute.filesystems.get";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_filesystem"
       from_request_field: "filesystem_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -71,7 +71,7 @@ service FilesystemService {
     option (kacho.iam.authz.v1.permission)        = "compute.filesystems.update";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_filesystem"
       from_request_field: "filesystem_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -91,7 +91,7 @@ service FilesystemService {
     option (kacho.iam.authz.v1.permission)        = "compute.filesystems.delete";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_filesystem"
       from_request_field: "filesystem_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -103,7 +103,7 @@ service FilesystemService {
     option (kacho.iam.authz.v1.permission)        = "compute.filesystem_operationses.listOperations";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_filesystem"
       from_request_field: "filesystem_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
