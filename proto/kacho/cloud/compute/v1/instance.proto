@@ -18,6 +18,15 @@ option go_package = "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/comp
 message Instance {
 
   reserved 15, 25;
+  // BREAKING (KAC contract-authz 2026-07-05): host_group_id (27) and host_id (28)
+  // removed from the PUBLIC Instance projection. Dedicated-host / host-group
+  // placement is infra-sensitive (maps a tenant instance to a physical host) and
+  // MUST NOT be exposed on the public API — see workspace ban §"Инфра-чувствительные
+  // данные" / §6. Field numbers AND names are reserved so they can never be reused
+  // on the public message. A separate compute pass stops populating them and, if
+  // needed, surfaces them on an internal-only projection behind Internal* API.
+  reserved 27, 28;
+  reserved "host_group_id", "host_id";
 
   enum Status {
     STATUS_UNSPECIFIED = 0;
@@ -132,12 +141,6 @@ message Instance {
 
   // Placement policy configuration.
   PlacementPolicy placement_policy = 20;
-
-  // ID of the dedicated host group that the instance belongs to.
-  string host_group_id = 27;
-
-  // ID of the dedicated host that the instance belongs to.
-  string host_id = 28;
 
   // Behaviour on maintenance events
   MaintenancePolicy maintenance_policy = 29;

@@ -529,10 +529,6 @@ type Instance struct {
 	NetworkSettings *NetworkSettings `protobuf:"bytes,19,opt,name=network_settings,json=networkSettings,proto3" json:"network_settings,omitempty"`
 	// Placement policy configuration.
 	PlacementPolicy *PlacementPolicy `protobuf:"bytes,20,opt,name=placement_policy,json=placementPolicy,proto3" json:"placement_policy,omitempty"`
-	// ID of the dedicated host group that the instance belongs to.
-	HostGroupId string `protobuf:"bytes,27,opt,name=host_group_id,json=hostGroupId,proto3" json:"host_group_id,omitempty"`
-	// ID of the dedicated host that the instance belongs to.
-	HostId string `protobuf:"bytes,28,opt,name=host_id,json=hostId,proto3" json:"host_id,omitempty"`
 	// Behaviour on maintenance events
 	MaintenancePolicy MaintenancePolicy `protobuf:"varint,29,opt,name=maintenance_policy,json=maintenancePolicy,proto3,enum=kacho.cloud.compute.v1.MaintenancePolicy" json:"maintenance_policy,omitempty"`
 	// Time between notification via metadata service and maintenance
@@ -743,20 +739,6 @@ func (x *Instance) GetPlacementPolicy() *PlacementPolicy {
 		return x.PlacementPolicy
 	}
 	return nil
-}
-
-func (x *Instance) GetHostGroupId() string {
-	if x != nil {
-		return x.HostGroupId
-	}
-	return ""
-}
-
-func (x *Instance) GetHostId() string {
-	if x != nil {
-		return x.HostId
-	}
-	return ""
 }
 
 func (x *Instance) GetMaintenancePolicy() MaintenancePolicy {
@@ -1843,7 +1825,7 @@ var File_kacho_cloud_compute_v1_instance_proto protoreflect.FileDescriptor
 
 const file_kacho_cloud_compute_v1_instance_proto_rawDesc = "" +
 	"\n" +
-	"%kacho/cloud/compute/v1/instance.proto\x12\x16kacho.cloud.compute.v1\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a kacho/cloud/compute/v1/kek.proto\x1a(kacho/cloud/compute/v1/application.proto\x1a0kacho/cloud/compute/v1/hardware_generation.proto\x1a(kacho/cloud/compute/v1/maintenance.proto\"\xb6\x11\n" +
+	"%kacho/cloud/compute/v1/instance.proto\x12\x16kacho.cloud.compute.v1\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a kacho/cloud/compute/v1/kek.proto\x1a(kacho/cloud/compute/v1/application.proto\x1a0kacho/cloud/compute/v1/hardware_generation.proto\x1a(kacho/cloud/compute/v1/maintenance.proto\"\x9d\x11\n" +
 	"\bInstance\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -1873,9 +1855,7 @@ const file_kacho_cloud_compute_v1_instance_proto_rawDesc = "" +
 	"\x11scheduling_policy\x18\x11 \x01(\v2(.kacho.cloud.compute.v1.SchedulingPolicyR\x10schedulingPolicy\x12,\n" +
 	"\x12service_account_id\x18\x12 \x01(\tR\x10serviceAccountId\x12R\n" +
 	"\x10network_settings\x18\x13 \x01(\v2'.kacho.cloud.compute.v1.NetworkSettingsR\x0fnetworkSettings\x12R\n" +
-	"\x10placement_policy\x18\x14 \x01(\v2'.kacho.cloud.compute.v1.PlacementPolicyR\x0fplacementPolicy\x12\"\n" +
-	"\rhost_group_id\x18\x1b \x01(\tR\vhostGroupId\x12\x17\n" +
-	"\ahost_id\x18\x1c \x01(\tR\x06hostId\x12X\n" +
+	"\x10placement_policy\x18\x14 \x01(\v2'.kacho.cloud.compute.v1.PlacementPolicyR\x0fplacementPolicy\x12X\n" +
 	"\x12maintenance_policy\x18\x1d \x01(\x0e2).kacho.cloud.compute.v1.MaintenancePolicyR\x11maintenancePolicy\x12S\n" +
 	"\x18maintenance_grace_period\x18\x1e \x01(\v2\x19.google.protobuf.DurationR\x16maintenanceGracePeriod\x12[\n" +
 	"\x13hardware_generation\x18\x1f \x01(\v2*.kacho.cloud.compute.v1.HardwareGenerationR\x12hardwareGeneration\x129\n" +
@@ -1900,7 +1880,7 @@ const file_kacho_cloud_compute_v1_instance_proto_rawDesc = "" +
 	"\x05ERROR\x10\b\x12\v\n" +
 	"\aCRASHED\x10\t\x12\f\n" +
 	"\bDELETING\x10\n" +
-	"J\x04\b\x0f\x10\x10J\x04\b\x19\x10\x1a\"r\n" +
+	"J\x04\b\x0f\x10\x10J\x04\b\x19\x10\x1aJ\x04\b\x1b\x10\x1cJ\x04\b\x1c\x10\x1dR\rhost_group_idR\ahost_id\"r\n" +
 	"\tResources\x12\x16\n" +
 	"\x06memory\x18\x01 \x01(\x03R\x06memory\x12\x14\n" +
 	"\x05cores\x18\x02 \x01(\x03R\x05cores\x12#\n" +
