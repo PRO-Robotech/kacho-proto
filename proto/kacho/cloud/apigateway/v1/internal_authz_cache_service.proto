@@ -10,6 +10,7 @@ syntax = "proto3";
 package kacho.cloud.apigateway.v1;
 
 import "google/protobuf/empty.proto";
+import "kacho/iam/authz/v1/authz_options.proto";
 
 option go_package = "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/apigateway/v1;apigatewayv1";
 
@@ -43,7 +44,14 @@ service InternalAuthzCacheService {
   // reported via metric `apigw.authz.cache.invalidate.entries` (labels:
   // event_type, subject_type) instead of the RPC reply.
   rpc InvalidateSubject (InvalidateSubjectRequest)
-    returns (google.protobuf.Empty);
+    returns (google.protobuf.Empty) {
+    // Exempt from per-request authz: this service is registered ONLY on the
+    // api-gateway internal mTLS listener (port 9091) and is NEVER exposed on
+    // the external TLS REST mux. The sole caller is kacho-iam's
+    // SubjectChangeApplier over mutual-TLS, so subject-level authz does not
+    // apply.
+    option (kacho.iam.authz.v1.permission) = "<exempt>";
+  }
 }
 
 // InvalidateSubjectRequest — sole input of InvalidateSubject.

@@ -10,6 +10,7 @@
 package registryv1
 
 import (
+	_ "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud"
 	_ "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/api"
 	operation "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/operation"
 	_ "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/iam/authz/v1"
@@ -983,14 +984,15 @@ var File_kacho_cloud_registry_v1_registry_service_proto protoreflect.FileDescrip
 
 const file_kacho_cloud_registry_v1_registry_service_proto_rawDesc = "" +
 	"\n" +
-	".kacho/cloud/registry/v1/registry_service.proto\x12\x17kacho.cloud.registry.v1\x1a\x1cgoogle/api/annotations.proto\x1a google/protobuf/field_mask.proto\x1a\x1fkacho/cloud/api/operation.proto\x1a%kacho/cloud/operation/operation.proto\x1a&kacho/cloud/registry/v1/registry.proto\x1a&kacho/iam/authz/v1/authz_options.proto\"5\n" +
+	".kacho/cloud/registry/v1/registry_service.proto\x12\x17kacho.cloud.registry.v1\x1a\x1cgoogle/api/annotations.proto\x1a google/protobuf/field_mask.proto\x1a\x1fkacho/cloud/api/operation.proto\x1a%kacho/cloud/operation/operation.proto\x1a&kacho/cloud/registry/v1/registry.proto\x1a\x1ckacho/cloud/validation.proto\x1a&kacho/iam/authz/v1/authz_options.proto\"5\n" +
 	"\x12GetRegistryRequest\x12\x1f\n" +
 	"\vregistry_id\x18\x01 \x01(\tR\n" +
-	"registryId\"\x8a\x01\n" +
+	"registryId\"\x96\x01\n" +
 	"\x15ListRegistriesRequest\x12\x1d\n" +
 	"\n" +
-	"project_id\x18\x01 \x01(\tR\tprojectId\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\x12'\n" +
+	"\tpage_size\x18\x02 \x01(\x05B\n" +
+	"\xfa\xc71\x060-1000R\bpageSize\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\x12\x16\n" +
 	"\x06filter\x18\x04 \x01(\tR\x06filter\"\x83\x01\n" +
@@ -1030,23 +1032,25 @@ const file_kacho_cloud_registry_v1_registry_service_proto_rawDesc = "" +
 	"registryId\"9\n" +
 	"\x16DeleteRegistryMetadata\x12\x1f\n" +
 	"\vregistry_id\x18\x01 \x01(\tR\n" +
-	"registryId\"v\n" +
+	"registryId\"\x82\x01\n" +
 	"\x17ListRepositoriesRequest\x12\x1f\n" +
 	"\vregistry_id\x18\x01 \x01(\tR\n" +
-	"registryId\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"registryId\x12'\n" +
+	"\tpage_size\x18\x02 \x01(\x05B\n" +
+	"\xfa\xc71\x060-1000R\bpageSize\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\"\x8b\x01\n" +
 	"\x18ListRepositoriesResponse\x12G\n" +
 	"\frepositories\x18\x01 \x03(\v2#.kacho.cloud.registry.v1.RepositoryR\frepositories\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x8e\x01\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x9a\x01\n" +
 	"\x0fListTagsRequest\x12\x1f\n" +
 	"\vregistry_id\x18\x01 \x01(\tR\n" +
 	"registryId\x12\x1e\n" +
 	"\n" +
 	"repository\x18\x02 \x01(\tR\n" +
-	"repository\x12\x1b\n" +
-	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"repository\x12'\n" +
+	"\tpage_size\x18\x03 \x01(\x05B\n" +
+	"\xfa\xc71\x060-1000R\bpageSize\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x04 \x01(\tR\tpageToken\"l\n" +
 	"\x10ListTagsResponse\x120\n" +
@@ -1065,11 +1069,12 @@ const file_kacho_cloud_registry_v1_registry_service_proto_rawDesc = "" +
 	"\n" +
 	"repository\x18\x02 \x01(\tR\n" +
 	"repository\x12\x10\n" +
-	"\x03tag\x18\x03 \x01(\tR\x03tag\"|\n" +
+	"\x03tag\x18\x03 \x01(\tR\x03tag\"\x88\x01\n" +
 	"\x1dListRegistryOperationsRequest\x12\x1f\n" +
 	"\vregistry_id\x18\x01 \x01(\tR\n" +
-	"registryId\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"registryId\x12'\n" +
+	"\tpage_size\x18\x02 \x01(\x05B\n" +
+	"\xfa\xc71\x060-1000R\bpageSize\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\"\x8a\x01\n" +
 	"\x1eListRegistryOperationsResponse\x12@\n" +

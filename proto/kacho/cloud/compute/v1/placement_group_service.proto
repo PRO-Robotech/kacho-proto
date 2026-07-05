@@ -295,7 +295,7 @@ message ListPlacementGroupInstancesRequest {
   // results is larger than [page_size],
   // the service returns a [ListPlacementGroupInstancesResponse.next_page_token]
   // that can be used to get the next page of results in subsequent list requests.
-  int64 page_size = 2;
+  int64 page_size = 2 [(value) = "0-1000"];
 
   // Page token. To get the next page of results,
   // set [page_token] to the [ListPlacementGroupInstancesResponse.next_page_token]
@@ -325,7 +325,7 @@ message ListPlacementGroupOperationsRequest {
   // The maximum number of results per page to return. If the number of available
   // results is larger than [page_size], the service returns a [ListPlacementGroupOperationsResponse.next_page_token]
   // that can be used to get the next page of results in subsequent list requests.
-  int64 page_size = 2;
+  int64 page_size = 2 [(value) = "0-1000"];
 
   // Page token. To get the next page of results, set [page_token] to the
   // [ListPlacementGroupOperationsResponse.next_page_token] returned by a previous list request.
