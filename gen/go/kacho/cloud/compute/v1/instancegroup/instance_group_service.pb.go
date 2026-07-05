@@ -14,6 +14,7 @@ import (
 	access "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/access"
 	_ "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/api"
 	operation "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/operation"
+	_ "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/iam/authz/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -2353,7 +2354,7 @@ var File_kacho_cloud_compute_v1_instancegroup_instance_group_service_proto proto
 
 const file_kacho_cloud_compute_v1_instancegroup_instance_group_service_proto_rawDesc = "" +
 	"\n" +
-	"Akacho/cloud/compute/v1/instancegroup/instance_group_service.proto\x12$kacho.cloud.compute.v1.instancegroup\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a google/protobuf/field_mask.proto\x1a\x1fkacho/cloud/access/access.proto\x1a\x1fkacho/cloud/api/operation.proto\x1a9kacho/cloud/compute/v1/instancegroup/instance_group.proto\x1a%kacho/cloud/operation/operation.proto\x1a\x1ckacho/cloud/validation.proto\"[\n" +
+	"Akacho/cloud/compute/v1/instancegroup/instance_group_service.proto\x12$kacho.cloud.compute.v1.instancegroup\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a google/protobuf/field_mask.proto\x1a\x1fkacho/cloud/access/access.proto\x1a\x1fkacho/cloud/api/operation.proto\x1a9kacho/cloud/compute/v1/instancegroup/instance_group.proto\x1a%kacho/cloud/operation/operation.proto\x1a\x1ckacho/cloud/validation.proto\x1a&kacho/iam/authz/v1/authz_options.proto\"[\n" +
 	"#ResumeInstanceGroupProcessesRequest\x124\n" +
 	"\x11instance_group_id\x18\x01 \x01(\tB\b\x8a\xc81\x04<=50R\x0finstanceGroupId\"P\n" +
 	"\"ResumeInstanceGroupProcessMetadata\x12*\n" +
@@ -2519,47 +2520,73 @@ const file_kacho_cloud_compute_v1_instancegroup_instance_group_service_proto_raw
 	"\x11instance_group_id\x18\x01 \x01(\tR\x0finstanceGroupId*(\n" +
 	"\x11InstanceGroupView\x12\t\n" +
 	"\x05BASIC\x10\x00\x12\b\n" +
-	"\x04FULL\x10\x012\x99'\n" +
-	"\x14InstanceGroupService\x12\xb1\x01\n" +
-	"\x03Get\x12=.kacho.cloud.compute.v1.instancegroup.GetInstanceGroupRequest\x1a3.kacho.cloud.compute.v1.instancegroup.InstanceGroup\"6\x82\xd3\xe4\x93\x020\x12./compute/v1/instanceGroups/{instance_group_id}\x12\xad\x01\n" +
-	"\x04List\x12?.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupsRequest\x1a@.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupsResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/compute/v1/instanceGroups\x12\xc3\x01\n" +
-	"\x06Create\x12@.kacho.cloud.compute.v1.instancegroup.CreateInstanceGroupRequest\x1a .kacho.cloud.operation.Operation\"U\xb2\xd2*,\n" +
-	"\x1bCreateInstanceGroupMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/compute/v1/instanceGroups\x12\xd8\x01\n" +
-	"\x0eCreateFromYaml\x12H.kacho.cloud.compute.v1.instancegroup.CreateInstanceGroupFromYamlRequest\x1a .kacho.cloud.operation.Operation\"Z\xb2\xd2*,\n" +
-	"\x1bCreateInstanceGroupMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/compute/v1/instanceGroups:yaml\x12\xd7\x01\n" +
-	"\x06Update\x12@.kacho.cloud.compute.v1.instancegroup.UpdateInstanceGroupRequest\x1a .kacho.cloud.operation.Operation\"i\xb2\xd2*,\n" +
-	"\x1bUpdateInstanceGroupMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x023:\x01*2./compute/v1/instanceGroups/{instance_group_id}\x12\xec\x01\n" +
-	"\x0eUpdateFromYaml\x12H.kacho.cloud.compute.v1.instancegroup.UpdateInstanceGroupFromYamlRequest\x1a .kacho.cloud.operation.Operation\"n\xb2\xd2*,\n" +
-	"\x1bUpdateInstanceGroupMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x028:\x01*23/compute/v1/instanceGroups/{instance_group_id}:yaml\x12\xd3\x01\n" +
-	"\x04Stop\x12>.kacho.cloud.compute.v1.instancegroup.StopInstanceGroupRequest\x1a .kacho.cloud.operation.Operation\"i\xb2\xd2**\n" +
-	"\x19StopInstanceGroupMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x025\"3/compute/v1/instanceGroups/{instance_group_id}:stop\x12\xe4\x01\n" +
-	"\x0eRollingRestart\x12;.kacho.cloud.compute.v1.instancegroup.RollingRestartRequest\x1a .kacho.cloud.operation.Operation\"s\xb2\xd2*'\n" +
-	"\x16RollingRestartMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02B:\x01*\"=/compute/v1/instanceGroups/{instance_group_id}:rollingRestart\x12\xe8\x01\n" +
-	"\x0fRollingRecreate\x12<.kacho.cloud.compute.v1.instancegroup.RollingRecreateRequest\x1a .kacho.cloud.operation.Operation\"u\xb2\xd2*(\n" +
-	"\x17RollingRecreateMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02C:\x01*\">/compute/v1/instanceGroups/{instance_group_id}:rollingRecreate\x12\xd7\x01\n" +
-	"\x05Start\x12?.kacho.cloud.compute.v1.instancegroup.StartInstanceGroupRequest\x1a .kacho.cloud.operation.Operation\"k\xb2\xd2*+\n" +
-	"\x1aStartInstanceGroupMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x026\"4/compute/v1/instanceGroups/{instance_group_id}:start\x12\xdc\x01\n" +
-	"\x06Delete\x12@.kacho.cloud.compute.v1.instancegroup.DeleteInstanceGroupRequest\x1a .kacho.cloud.operation.Operation\"n\xb2\xd2*4\n" +
-	"\x1bDeleteInstanceGroupMetadata\x12\x15google.protobuf.Empty\x82\xd3\xe4\x93\x020*./compute/v1/instanceGroups/{instance_group_id}\x12\xe4\x01\n" +
-	"\rListInstances\x12G.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupInstancesRequest\x1aH.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupInstancesResponse\"@\x82\xd3\xe4\x93\x02:\x128/compute/v1/instanceGroups/{instance_group_id}/instances\x12\xe8\x01\n" +
-	"\x0fDeleteInstances\x12<.kacho.cloud.compute.v1.instancegroup.DeleteInstancesRequest\x1a .kacho.cloud.operation.Operation\"u\xb2\xd2*(\n" +
-	"\x17DeleteInstancesMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02C:\x01*\">/compute/v1/instanceGroups/{instance_group_id}:deleteInstances\x12\xe0\x01\n" +
-	"\rStopInstances\x12:.kacho.cloud.compute.v1.instancegroup.StopInstancesRequest\x1a .kacho.cloud.operation.Operation\"q\xb2\xd2*&\n" +
-	"\x15StopInstancesMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02A:\x01*\"</compute/v1/instanceGroups/{instance_group_id}:stopInstances\x12\xe8\x01\n" +
-	"\x0eListOperations\x12H.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupOperationsRequest\x1aI.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupOperationsResponse\"A\x82\xd3\xe4\x93\x02;\x129/compute/v1/instanceGroups/{instance_group_id}/operations\x12\xe2\x01\n" +
-	"\x0eListLogRecords\x12H.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupLogRecordsRequest\x1aI.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupLogRecordsResponse\";\x82\xd3\xe4\x93\x025\x123/compute/v1/instanceGroups/{instance_group_id}:logs\x12\xb8\x01\n" +
-	"\x12ListAccessBindings\x12-.kacho.cloud.access.ListAccessBindingsRequest\x1a..kacho.cloud.access.ListAccessBindingsResponse\"C\x82\xd3\xe4\x93\x02=\x12;/compute/v1/instanceGroups/{resource_id}:listAccessBindings\x12\xe8\x01\n" +
-	"\x11SetAccessBindings\x12,.kacho.cloud.access.SetAccessBindingsRequest\x1a .kacho.cloud.operation.Operation\"\x82\x01\xb2\xd2*9\n" +
-	" access.SetAccessBindingsMetadata\x12\x15google.protobuf.Empty\x82\xd3\xe4\x93\x02?:\x01*\":/compute/v1/instanceGroups/{resource_id}:setAccessBindings\x12\xf4\x01\n" +
-	"\x14UpdateAccessBindings\x12/.kacho.cloud.access.UpdateAccessBindingsRequest\x1a .kacho.cloud.operation.Operation\"\x88\x01\xb2\xd2*<\n" +
-	"#access.UpdateAccessBindingsMetadata\x12\x15google.protobuf.Empty\x82\xd3\xe4\x93\x02B:\x01*\"=/compute/v1/instanceGroups/{resource_id}:updateAccessBindings\x12\x81\x02\n" +
-	"\x0fResumeProcesses\x12I.kacho.cloud.compute.v1.instancegroup.ResumeInstanceGroupProcessesRequest\x1a .kacho.cloud.operation.Operation\"\x80\x01\xb2\xd2*3\n" +
-	"\"ResumeInstanceGroupProcessMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02C:\x01*\">/compute/v1/instanceGroups/{instance_group_id}:resumeProcesses\x12\xfc\x01\n" +
-	"\x0ePauseProcesses\x12H.kacho.cloud.compute.v1.instancegroup.PauseInstanceGroupProcessesRequest\x1a .kacho.cloud.operation.Operation\"~\xb2\xd2*2\n" +
-	"!PauseInstanceGroupProcessMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02B:\x01*\"=/compute/v1/instanceGroups/{instance_group_id}:pauseProcesses\x12\x96\x01\n" +
-	"\fDisableZones\x129.kacho.cloud.compute.v1.instancegroup.DisableZonesRequest\x1a .kacho.cloud.operation.Operation\")\xb2\xd2*%\n" +
-	"\x14DisableZonesMetadata\x12\rInstanceGroup\x12\x93\x01\n" +
-	"\vEnableZones\x128.kacho.cloud.compute.v1.instancegroup.EnableZonesRequest\x1a .kacho.cloud.operation.Operation\"(\xb2\xd2*$\n" +
+	"\x04FULL\x10\x012\xdc8\n" +
+	"\x14InstanceGroupService\x12\x8d\x02\n" +
+	"\x03Get\x12=.kacho.cloud.compute.v1.instancegroup.GetInstanceGroupRequest\x1a3.kacho.cloud.compute.v1.instancegroup.InstanceGroup\"\x91\x01\x8a\xb5\x18\x1acompute.instanceGroups.get\x92\xb5\x18\x05v_get\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\x82\xd3\xe4\x93\x020\x12./compute/v1/instanceGroups/{instance_group_id}\x12\xf4\x01\n" +
+	"\x04List\x12?.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupsRequest\x1a@.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupsResponse\"i\x8a\xb5\x18\x1bcompute.instanceGroups.list\x92\xb5\x18\x06v_list\x9a\xb5\x18\x15\n" +
+	"\aproject\x12\n" +
+	"project_id\xa2\xb5\x18\x012\x82\xd3\xe4\x93\x02\x1c\x12\x1a/compute/v1/instanceGroups\x12\x8d\x02\n" +
+	"\x06Create\x12@.kacho.cloud.compute.v1.instancegroup.CreateInstanceGroupRequest\x1a .kacho.cloud.operation.Operation\"\x9e\x01\x8a\xb5\x18\x1dcompute.instanceGroups.create\x92\xb5\x18\x06editor\x9a\xb5\x18\x15\n" +
+	"\aproject\x12\n" +
+	"project_id\xa2\xb5\x18\x012\xb2\xd2*,\n" +
+	"\x1bCreateInstanceGroupMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/compute/v1/instanceGroups\x12\xaa\x02\n" +
+	"\x0eCreateFromYaml\x12H.kacho.cloud.compute.v1.instancegroup.CreateInstanceGroupFromYamlRequest\x1a .kacho.cloud.operation.Operation\"\xab\x01\x8a\xb5\x18%compute.instanceGroups.createFromYaml\x92\xb5\x18\x06editor\x9a\xb5\x18\x15\n" +
+	"\aproject\x12\n" +
+	"project_id\xa2\xb5\x18\x012\xb2\xd2*,\n" +
+	"\x1bCreateInstanceGroupMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/compute/v1/instanceGroups:yaml\x12\xb7\x02\n" +
+	"\x06Update\x12@.kacho.cloud.compute.v1.instancegroup.UpdateInstanceGroupRequest\x1a .kacho.cloud.operation.Operation\"\xc8\x01\x8a\xb5\x18\x1dcompute.instanceGroups.update\x92\xb5\x18\x06editor\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\xb2\xd2*,\n" +
+	"\x1bUpdateInstanceGroupMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x023:\x01*2./compute/v1/instanceGroups/{instance_group_id}\x12\xd4\x02\n" +
+	"\x0eUpdateFromYaml\x12H.kacho.cloud.compute.v1.instancegroup.UpdateInstanceGroupFromYamlRequest\x1a .kacho.cloud.operation.Operation\"\xd5\x01\x8a\xb5\x18%compute.instanceGroups.updateFromYaml\x92\xb5\x18\x06editor\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\xb2\xd2*,\n" +
+	"\x1bUpdateInstanceGroupMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x028:\x01*23/compute/v1/instanceGroups/{instance_group_id}:yaml\x12\xb1\x02\n" +
+	"\x04Stop\x12>.kacho.cloud.compute.v1.instancegroup.StopInstanceGroupRequest\x1a .kacho.cloud.operation.Operation\"\xc6\x01\x8a\xb5\x18\x1bcompute.instanceGroups.stop\x92\xb5\x18\x06editor\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\xb2\xd2**\n" +
+	"\x19StopInstanceGroupMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x025\"3/compute/v1/instanceGroups/{instance_group_id}:stop\x12\xcc\x02\n" +
+	"\x0eRollingRestart\x12;.kacho.cloud.compute.v1.instancegroup.RollingRestartRequest\x1a .kacho.cloud.operation.Operation\"\xda\x01\x8a\xb5\x18%compute.instanceGroups.rollingRestart\x92\xb5\x18\x06editor\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\xb2\xd2*'\n" +
+	"\x16RollingRestartMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02B:\x01*\"=/compute/v1/instanceGroups/{instance_group_id}:rollingRestart\x12\xd1\x02\n" +
+	"\x0fRollingRecreate\x12<.kacho.cloud.compute.v1.instancegroup.RollingRecreateRequest\x1a .kacho.cloud.operation.Operation\"\xdd\x01\x8a\xb5\x18&compute.instanceGroups.rollingRecreate\x92\xb5\x18\x06editor\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\xb2\xd2*(\n" +
+	"\x17RollingRecreateMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02C:\x01*\">/compute/v1/instanceGroups/{instance_group_id}:rollingRecreate\x12\xb6\x02\n" +
+	"\x05Start\x12?.kacho.cloud.compute.v1.instancegroup.StartInstanceGroupRequest\x1a .kacho.cloud.operation.Operation\"\xc9\x01\x8a\xb5\x18\x1ccompute.instanceGroups.start\x92\xb5\x18\x06editor\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\xb2\xd2*+\n" +
+	"\x1aStartInstanceGroupMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x026\"4/compute/v1/instanceGroups/{instance_group_id}:start\x12\xbc\x02\n" +
+	"\x06Delete\x12@.kacho.cloud.compute.v1.instancegroup.DeleteInstanceGroupRequest\x1a .kacho.cloud.operation.Operation\"\xcd\x01\x8a\xb5\x18\x1dcompute.instanceGroups.delete\x92\xb5\x18\x06editor\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\xb2\xd2*4\n" +
+	"\x1bDeleteInstanceGroupMetadata\x12\x15google.protobuf.Empty\x82\xd3\xe4\x93\x020*./compute/v1/instanceGroups/{instance_group_id}\x12\xca\x02\n" +
+	"\rListInstances\x12G.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupInstancesRequest\x1aH.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupInstancesResponse\"\xa5\x01\x8a\xb5\x18$compute.instanceGroups.listInstances\x92\xb5\x18\x05v_get\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\x82\xd3\xe4\x93\x02:\x128/compute/v1/instanceGroups/{instance_group_id}/instances\x12\xd1\x02\n" +
+	"\x0fDeleteInstances\x12<.kacho.cloud.compute.v1.instancegroup.DeleteInstancesRequest\x1a .kacho.cloud.operation.Operation\"\xdd\x01\x8a\xb5\x18&compute.instanceGroups.deleteInstances\x92\xb5\x18\x06editor\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\xb2\xd2*(\n" +
+	"\x17DeleteInstancesMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02C:\x01*\">/compute/v1/instanceGroups/{instance_group_id}:deleteInstances\x12\xc7\x02\n" +
+	"\rStopInstances\x12:.kacho.cloud.compute.v1.instancegroup.StopInstancesRequest\x1a .kacho.cloud.operation.Operation\"\xd7\x01\x8a\xb5\x18$compute.instanceGroups.stopInstances\x92\xb5\x18\x06editor\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\xb2\xd2*&\n" +
+	"\x15StopInstancesMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02A:\x01*\"</compute/v1/instanceGroups/{instance_group_id}:stopInstances\x12\xcf\x02\n" +
+	"\x0eListOperations\x12H.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupOperationsRequest\x1aI.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupOperationsResponse\"\xa7\x01\x8a\xb5\x18%compute.instanceGroups.listOperations\x92\xb5\x18\x05v_get\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\x82\xd3\xe4\x93\x02;\x129/compute/v1/instanceGroups/{instance_group_id}/operations\x12\xc9\x02\n" +
+	"\x0eListLogRecords\x12H.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupLogRecordsRequest\x1aI.kacho.cloud.compute.v1.instancegroup.ListInstanceGroupLogRecordsResponse\"\xa1\x01\x8a\xb5\x18%compute.instanceGroups.listLogRecords\x92\xb5\x18\x05v_get\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\x82\xd3\xe4\x93\x025\x123/compute/v1/instanceGroups/{instance_group_id}:logs\x12\x9e\x02\n" +
+	"\x12ListAccessBindings\x12-.kacho.cloud.access.ListAccessBindingsRequest\x1a..kacho.cloud.access.ListAccessBindingsResponse\"\xa8\x01\x8a\xb5\x18)compute.instanceGroups.listAccessBindings\x92\xb5\x18\x06viewer\x9a\xb5\x18%\n" +
+	"\x16compute_instance_group\x12\vresource_id\xa2\xb5\x18\x012\x82\xd3\xe4\x93\x02=\x12;/compute/v1/instanceGroups/{resource_id}:listAccessBindings\x12\xcb\x02\n" +
+	"\x11SetAccessBindings\x12,.kacho.cloud.access.SetAccessBindingsRequest\x1a .kacho.cloud.operation.Operation\"\xe5\x01\x8a\xb5\x18(compute.instanceGroups.setAccessBindings\x92\xb5\x18\x05owner\x9a\xb5\x18%\n" +
+	"\x16compute_instance_group\x12\vresource_id\xa2\xb5\x18\x012\xb2\xd2*9\n" +
+	" access.SetAccessBindingsMetadata\x12\x15google.protobuf.Empty\x82\xd3\xe4\x93\x02?:\x01*\":/compute/v1/instanceGroups/{resource_id}:setAccessBindings\x12\xda\x02\n" +
+	"\x14UpdateAccessBindings\x12/.kacho.cloud.access.UpdateAccessBindingsRequest\x1a .kacho.cloud.operation.Operation\"\xee\x01\x8a\xb5\x18+compute.instanceGroups.updateAccessBindings\x92\xb5\x18\x05owner\x9a\xb5\x18%\n" +
+	"\x16compute_instance_group\x12\vresource_id\xa2\xb5\x18\x012\xb2\xd2*<\n" +
+	"#access.UpdateAccessBindingsMetadata\x12\x15google.protobuf.Empty\x82\xd3\xe4\x93\x02B:\x01*\"=/compute/v1/instanceGroups/{resource_id}:updateAccessBindings\x12\xe9\x02\n" +
+	"\x0fResumeProcesses\x12I.kacho.cloud.compute.v1.instancegroup.ResumeInstanceGroupProcessesRequest\x1a .kacho.cloud.operation.Operation\"\xe8\x01\x8a\xb5\x18&compute.instanceGroups.resumeProcesses\x92\xb5\x18\x06editor\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\xb2\xd2*3\n" +
+	"\"ResumeInstanceGroupProcessMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02C:\x01*\">/compute/v1/instanceGroups/{instance_group_id}:resumeProcesses\x12\xe4\x02\n" +
+	"\x0ePauseProcesses\x12H.kacho.cloud.compute.v1.instancegroup.PauseInstanceGroupProcessesRequest\x1a .kacho.cloud.operation.Operation\"\xe5\x01\x8a\xb5\x18%compute.instanceGroups.pauseProcesses\x92\xb5\x18\x06editor\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\xb2\xd2*2\n" +
+	"!PauseInstanceGroupProcessMetadata\x12\rInstanceGroup\x82\xd3\xe4\x93\x02B:\x01*\"=/compute/v1/instanceGroups/{instance_group_id}:pauseProcesses\x12\xfc\x01\n" +
+	"\fDisableZones\x129.kacho.cloud.compute.v1.instancegroup.DisableZonesRequest\x1a .kacho.cloud.operation.Operation\"\x8e\x01\x8a\xb5\x18#compute.instanceGroups.disableZones\x92\xb5\x18\x06editor\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\xb2\xd2*%\n" +
+	"\x14DisableZonesMetadata\x12\rInstanceGroup\x12\xf8\x01\n" +
+	"\vEnableZones\x128.kacho.cloud.compute.v1.instancegroup.EnableZonesRequest\x1a .kacho.cloud.operation.Operation\"\x8c\x01\x8a\xb5\x18\"compute.instanceGroups.enableZones\x92\xb5\x18\x06editor\x9a\xb5\x18+\n" +
+	"\x16compute_instance_group\x12\x11instance_group_id\xa2\xb5\x18\x012\xb2\xd2*$\n" +
 	"\x13EnableZonesMetadata\x12\rInstanceGroupBaZ_github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/compute/v1/instancegroup;instancegroupv1b\x06proto3"
 
 var (

@@ -1127,11 +1127,12 @@ const file_kacho_cloud_vpc_v1_security_group_service_proto_rawDesc = "" +
 	"\n" +
 	"/kacho/cloud/vpc/v1/security_group_service.proto\x12\x12kacho.cloud.vpc.v1\x1a\x1cgoogle/api/annotations.proto\x1a google/protobuf/field_mask.proto\x1a\x1fkacho/cloud/api/operation.proto\x1a'kacho/cloud/vpc/v1/security_group.proto\x1a%kacho/cloud/operation/operation.proto\x1a\x1ckacho/cloud/validation.proto\x1a&kacho/iam/authz/v1/authz_options.proto\"K\n" +
 	"\x17GetSecurityGroupRequest\x120\n" +
-	"\x11security_group_id\x18\x01 \x01(\tB\x04\xe8\xc71\x01R\x0fsecurityGroupId\"\x94\x01\n" +
+	"\x11security_group_id\x18\x01 \x01(\tB\x04\xe8\xc71\x01R\x0fsecurityGroupId\"\xa0\x01\n" +
 	"\x19ListSecurityGroupsRequest\x12#\n" +
 	"\n" +
-	"project_id\x18\x01 \x01(\tB\x04\xe8\xc71\x01R\tprojectId\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x03R\bpageSize\x12\x1d\n" +
+	"project_id\x18\x01 \x01(\tB\x04\xe8\xc71\x01R\tprojectId\x12'\n" +
+	"\tpage_size\x18\x02 \x01(\x03B\n" +
+	"\xfa\xc71\x060-1000R\bpageSize\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\x12\x16\n" +
 	"\x06filter\x18\x04 \x01(\tR\x06filter\"\x90\x01\n" +
@@ -1205,10 +1206,11 @@ const file_kacho_cloud_vpc_v1_security_group_service_proto_rawDesc = "" +
 	"\x1aDeleteSecurityGroupRequest\x120\n" +
 	"\x11security_group_id\x18\x01 \x01(\tB\x04\xe8\xc71\x01R\x0fsecurityGroupId\"I\n" +
 	"\x1bDeleteSecurityGroupMetadata\x12*\n" +
-	"\x11security_group_id\x18\x01 \x01(\tR\x0fsecurityGroupId\"\x92\x01\n" +
+	"\x11security_group_id\x18\x01 \x01(\tR\x0fsecurityGroupId\"\x9e\x01\n" +
 	"\"ListSecurityGroupOperationsRequest\x120\n" +
-	"\x11security_group_id\x18\x01 \x01(\tB\x04\xe8\xc71\x01R\x0fsecurityGroupId\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x03R\bpageSize\x12\x1d\n" +
+	"\x11security_group_id\x18\x01 \x01(\tB\x04\xe8\xc71\x01R\x0fsecurityGroupId\x12'\n" +
+	"\tpage_size\x18\x02 \x01(\x03B\n" +
+	"\xfa\xc71\x060-1000R\bpageSize\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\"\x8f\x01\n" +
 	"#ListSecurityGroupOperationsResponse\x12@\n" +

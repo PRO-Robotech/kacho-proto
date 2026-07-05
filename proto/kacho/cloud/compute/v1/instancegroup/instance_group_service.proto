@@ -13,6 +13,7 @@ import "kacho/cloud/api/operation.proto";
 import "kacho/cloud/compute/v1/instancegroup/instance_group.proto";
 import "kacho/cloud/operation/operation.proto";
 import "kacho/cloud/validation.proto";
+import "kacho/iam/authz/v1/authz_options.proto";
 
 option go_package = "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/compute/v1/instancegroup;instancegroupv1";
 
@@ -23,11 +24,25 @@ service InstanceGroupService {
   // To get the list of available InstanceGroup resources, make a [List] request.
   rpc Get(GetInstanceGroupRequest) returns (InstanceGroup) {
     option (google.api.http) = {get: "/compute/v1/instanceGroups/{instance_group_id}"};
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.get";
+    option (kacho.iam.authz.v1.required_relation) = "v_get";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Retrieves the list of InstanceGroup resources in the specified folder.
   rpc List(ListInstanceGroupsRequest) returns (ListInstanceGroupsResponse) {
     option (google.api.http) = {get: "/compute/v1/instanceGroups"};
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.list";
+    option (kacho.iam.authz.v1.required_relation) = "v_list";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "project"
+      from_request_field: "project_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Creates an instance group in the specified folder.
@@ -41,6 +56,13 @@ service InstanceGroupService {
       metadata: "CreateInstanceGroupMetadata"
       response: "InstanceGroup"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.create";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "project"
+      from_request_field: "project_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Creates an instance group in the specified folder from a YAML file.
@@ -54,6 +76,13 @@ service InstanceGroupService {
       metadata: "CreateInstanceGroupMetadata"
       response: "InstanceGroup"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.createFromYaml";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "project"
+      from_request_field: "project_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Updates the specified instance group.
@@ -67,6 +96,13 @@ service InstanceGroupService {
       metadata: "UpdateInstanceGroupMetadata"
       response: "InstanceGroup"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.update";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Updates the specified instance group from a YAML file.
@@ -80,6 +116,13 @@ service InstanceGroupService {
       metadata: "UpdateInstanceGroupMetadata"
       response: "InstanceGroup"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.updateFromYaml";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Stops the specified instance group.
@@ -89,6 +132,13 @@ service InstanceGroupService {
       metadata: "StopInstanceGroupMetadata"
       response: "InstanceGroup"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.stop";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Performs rolling restart of specified instances for the specified instance group.
@@ -102,6 +152,13 @@ service InstanceGroupService {
       metadata: "RollingRestartMetadata"
       response: "InstanceGroup"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.rollingRestart";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Performs rolling recreate of specified instances for the specified instance group.
@@ -115,6 +172,13 @@ service InstanceGroupService {
       metadata: "RollingRecreateMetadata"
       response: "InstanceGroup"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.rollingRecreate";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Starts the specified instance group.
@@ -124,6 +188,13 @@ service InstanceGroupService {
       metadata: "StartInstanceGroupMetadata"
       response: "InstanceGroup"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.start";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Deletes the specified instance group.
@@ -133,11 +204,25 @@ service InstanceGroupService {
       metadata: "DeleteInstanceGroupMetadata"
       response: "google.protobuf.Empty"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.delete";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Lists instances for the specified instance group.
   rpc ListInstances(ListInstanceGroupInstancesRequest) returns (ListInstanceGroupInstancesResponse) {
     option (google.api.http) = {get: "/compute/v1/instanceGroups/{instance_group_id}/instances"};
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.listInstances";
+    option (kacho.iam.authz.v1.required_relation) = "v_get";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Delete instances from the instance group.
@@ -150,6 +235,13 @@ service InstanceGroupService {
       metadata: "DeleteInstancesMetadata"
       response: "InstanceGroup"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.deleteInstances";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Stop instances from the instance group.
@@ -162,21 +254,49 @@ service InstanceGroupService {
       metadata: "StopInstancesMetadata"
       response: "InstanceGroup"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.stopInstances";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Lists operations for the specified instance group.
   rpc ListOperations(ListInstanceGroupOperationsRequest) returns (ListInstanceGroupOperationsResponse) {
     option (google.api.http) = {get: "/compute/v1/instanceGroups/{instance_group_id}/operations"};
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.listOperations";
+    option (kacho.iam.authz.v1.required_relation) = "v_get";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Lists logs for the specified instance group.
   rpc ListLogRecords(ListInstanceGroupLogRecordsRequest) returns (ListInstanceGroupLogRecordsResponse) {
     option (google.api.http) = {get: "/compute/v1/instanceGroups/{instance_group_id}:logs"};
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.listLogRecords";
+    option (kacho.iam.authz.v1.required_relation) = "v_get";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Lists existing access bindings for the specified instance group.
   rpc ListAccessBindings(access.ListAccessBindingsRequest) returns (access.ListAccessBindingsResponse) {
     option (google.api.http) = {get: "/compute/v1/instanceGroups/{resource_id}:listAccessBindings"};
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.listAccessBindings";
+    option (kacho.iam.authz.v1.required_relation) = "viewer";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "resource_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Sets access bindings for the specified instance group.
@@ -189,6 +309,13 @@ service InstanceGroupService {
       metadata: "access.SetAccessBindingsMetadata"
       response: "google.protobuf.Empty"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.setAccessBindings";
+    option (kacho.iam.authz.v1.required_relation) = "owner";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "resource_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Updates access bindings for the specified instance group.
@@ -201,6 +328,13 @@ service InstanceGroupService {
       metadata: "access.UpdateAccessBindingsMetadata"
       response: "google.protobuf.Empty"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.updateAccessBindings";
+    option (kacho.iam.authz.v1.required_relation) = "owner";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "resource_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Resumes all processes regarding management of the specified instance group,
@@ -214,6 +348,13 @@ service InstanceGroupService {
       metadata: "ResumeInstanceGroupProcessMetadata"
       response: "InstanceGroup"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.resumeProcesses";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Pauses all processes regarding management of the specified instance group,
@@ -227,6 +368,13 @@ service InstanceGroupService {
       metadata: "PauseInstanceGroupProcessMetadata"
       response: "InstanceGroup"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.pauseProcesses";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Disable zones for the specified instance group.
@@ -235,6 +383,13 @@ service InstanceGroupService {
       metadata: "DisableZonesMetadata"
       response: "InstanceGroup"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.disableZones";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
   // Enable zones for the specified instance group.
@@ -243,6 +398,13 @@ service InstanceGroupService {
       metadata: "EnableZonesMetadata"
       response: "InstanceGroup"
     };
+    option (kacho.iam.authz.v1.permission)        = "compute.instanceGroups.enableZones";
+    option (kacho.iam.authz.v1.required_relation) = "editor";
+    option (kacho.iam.authz.v1.scope_extractor)   = {
+      object_type:        "compute_instance_group"
+      from_request_field: "instance_group_id"
+    };
+    option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 }
 

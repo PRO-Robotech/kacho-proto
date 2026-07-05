@@ -1490,28 +1490,31 @@ const file_kacho_cloud_compute_v1_snapshot_schedule_service_proto_rawDesc = "" +
 	"\x1dEnableSnapshotScheduleRequest\x120\n" +
 	"\x14snapshot_schedule_id\x18\x01 \x01(\tR\x12snapshotScheduleId\"R\n" +
 	"\x1eEnableSnapshotScheduleMetadata\x120\n" +
-	"\x14snapshot_schedule_id\x18\x01 \x01(\tR\x12snapshotScheduleId\"\x95\x01\n" +
+	"\x14snapshot_schedule_id\x18\x01 \x01(\tR\x12snapshotScheduleId\"\xa1\x01\n" +
 	"%ListSnapshotScheduleOperationsRequest\x120\n" +
-	"\x14snapshot_schedule_id\x18\x01 \x01(\tR\x12snapshotScheduleId\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x03R\bpageSize\x12\x1d\n" +
+	"\x14snapshot_schedule_id\x18\x01 \x01(\tR\x12snapshotScheduleId\x12'\n" +
+	"\tpage_size\x18\x02 \x01(\x03B\n" +
+	"\xfa\xc71\x060-1000R\bpageSize\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\"\x92\x01\n" +
 	"&ListSnapshotScheduleOperationsResponse\x12@\n" +
 	"\n" +
 	"operations\x18\x01 \x03(\v2 .kacho.cloud.operation.OperationR\n" +
 	"operations\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x94\x01\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xa0\x01\n" +
 	"$ListSnapshotScheduleSnapshotsRequest\x120\n" +
-	"\x14snapshot_schedule_id\x18\x01 \x01(\tR\x12snapshotScheduleId\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x03R\bpageSize\x12\x1d\n" +
+	"\x14snapshot_schedule_id\x18\x01 \x01(\tR\x12snapshotScheduleId\x12'\n" +
+	"\tpage_size\x18\x02 \x01(\x03B\n" +
+	"\xfa\xc71\x060-1000R\bpageSize\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\"\x8f\x01\n" +
 	"%ListSnapshotScheduleSnapshotsResponse\x12>\n" +
 	"\tsnapshots\x18\x01 \x03(\v2 .kacho.cloud.compute.v1.SnapshotR\tsnapshots\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x90\x01\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x9c\x01\n" +
 	" ListSnapshotScheduleDisksRequest\x120\n" +
-	"\x14snapshot_schedule_id\x18\x01 \x01(\tR\x12snapshotScheduleId\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x03R\bpageSize\x12\x1d\n" +
+	"\x14snapshot_schedule_id\x18\x01 \x01(\tR\x12snapshotScheduleId\x12'\n" +
+	"\tpage_size\x18\x02 \x01(\x03B\n" +
+	"\xfa\xc71\x060-1000R\bpageSize\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\"\x7f\n" +
 	"!ListSnapshotScheduleDisksResponse\x122\n" +

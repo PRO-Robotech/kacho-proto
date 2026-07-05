@@ -15,6 +15,7 @@
 package apigatewayv1
 
 import (
+	_ "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/iam/authz/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -118,16 +119,16 @@ var File_kacho_cloud_apigateway_v1_internal_authz_cache_service_proto protorefle
 
 const file_kacho_cloud_apigateway_v1_internal_authz_cache_service_proto_rawDesc = "" +
 	"\n" +
-	"<kacho/cloud/apigateway/v1/internal_authz_cache_service.proto\x12\x19kacho.cloud.apigateway.v1\x1a\x1bgoogle/protobuf/empty.proto\"\x99\x01\n" +
+	"<kacho/cloud/apigateway/v1/internal_authz_cache_service.proto\x12\x19kacho.cloud.apigateway.v1\x1a\x1bgoogle/protobuf/empty.proto\x1a&kacho/iam/authz/v1/authz_options.proto\"\x99\x01\n" +
 	"\x18InvalidateSubjectRequest\x12\x18\n" +
 	"\asubject\x18\x01 \x01(\tR\asubject\x12#\n" +
 	"\rresource_type\x18\x02 \x01(\tR\fresourceType\x12\x1f\n" +
 	"\vresource_id\x18\x03 \x01(\tR\n" +
 	"resourceId\x12\x1d\n" +
 	"\n" +
-	"event_type\x18\x04 \x01(\tR\teventType2}\n" +
-	"\x19InternalAuthzCacheService\x12`\n" +
-	"\x11InvalidateSubject\x123.kacho.cloud.apigateway.v1.InvalidateSubjectRequest\x1a\x16.google.protobuf.EmptyBSZQgithub.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/apigateway/v1;apigatewayv1b\x06proto3"
+	"event_type\x18\x04 \x01(\tR\teventType2\x8b\x01\n" +
+	"\x19InternalAuthzCacheService\x12n\n" +
+	"\x11InvalidateSubject\x123.kacho.cloud.apigateway.v1.InvalidateSubjectRequest\x1a\x16.google.protobuf.Empty\"\f\x8a\xb5\x18\b<exempt>BSZQgithub.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/apigateway/v1;apigatewayv1b\x06proto3"
 
 var (
 	file_kacho_cloud_apigateway_v1_internal_authz_cache_service_proto_rawDescOnce sync.Once

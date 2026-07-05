@@ -442,7 +442,7 @@ message ListSnapshotScheduleOperationsRequest {
   // that can be used to get the next page of results in subsequent list requests.
   //
   // Default value: 100.
-  int64 page_size = 2;
+  int64 page_size = 2 [(value) = "0-1000"];
 
   // Page token. To get the next page of results, set [page_token] to the
   // [ListSnapshotScheduleOperationsResponse.next_page_token] returned by a previous list request.
@@ -472,7 +472,7 @@ message ListSnapshotScheduleSnapshotsRequest {
   // that can be used to get the next page of results in subsequent list requests.
   //
   // Default value: 100.
-  int64 page_size = 2;
+  int64 page_size = 2 [(value) = "0-1000"];
 
   // Page token. To get the next page of results, set [page_token] to the
   // [ListSnapshotScheduleOperationsResponse.next_page_token] returned by a previous list request.
@@ -502,7 +502,7 @@ message ListSnapshotScheduleDisksRequest {
   // that can be used to get the next page of results in subsequent list requests.
   //
   // Default value: 100.
-  int64 page_size = 2;
+  int64 page_size = 2 [(value) = "0-1000"];
 
   // Page token. To get the next page of results, set [page_token] to the
   // [ListSnapshotScheduleDisksResponse.next_page_token] returned by a previous list request.

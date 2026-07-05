@@ -928,18 +928,20 @@ const file_kacho_cloud_compute_v1_placement_group_service_proto_rawDesc = "" +
 	"\x1bDeletePlacementGroupRequest\x12,\n" +
 	"\x12placement_group_id\x18\x01 \x01(\tR\x10placementGroupId\"L\n" +
 	"\x1cDeletePlacementGroupMetadata\x12,\n" +
-	"\x12placement_group_id\x18\x01 \x01(\tR\x10placementGroupId\"\x8e\x01\n" +
+	"\x12placement_group_id\x18\x01 \x01(\tR\x10placementGroupId\"\x9a\x01\n" +
 	"\"ListPlacementGroupInstancesRequest\x12,\n" +
-	"\x12placement_group_id\x18\x01 \x01(\tR\x10placementGroupId\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x03R\bpageSize\x12\x1d\n" +
+	"\x12placement_group_id\x18\x01 \x01(\tR\x10placementGroupId\x12'\n" +
+	"\tpage_size\x18\x02 \x01(\x03B\n" +
+	"\xfa\xc71\x060-1000R\bpageSize\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\"\x8d\x01\n" +
 	"#ListPlacementGroupInstancesResponse\x12>\n" +
 	"\tinstances\x18\x01 \x03(\v2 .kacho.cloud.compute.v1.InstanceR\tinstances\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x8f\x01\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x9b\x01\n" +
 	"#ListPlacementGroupOperationsRequest\x12,\n" +
-	"\x12placement_group_id\x18\x01 \x01(\tR\x10placementGroupId\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x03R\bpageSize\x12\x1d\n" +
+	"\x12placement_group_id\x18\x01 \x01(\tR\x10placementGroupId\x12'\n" +
+	"\tpage_size\x18\x02 \x01(\x03B\n" +
+	"\xfa\xc71\x060-1000R\bpageSize\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\"\x90\x01\n" +
 	"$ListPlacementGroupOperationsResponse\x12@\n" +

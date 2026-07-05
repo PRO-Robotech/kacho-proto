@@ -1173,10 +1173,11 @@ const file_kacho_cloud_compute_v1_disk_service_proto_rawDesc = "" +
 	"\x14RelocateDiskMetadata\x12\x17\n" +
 	"\adisk_id\x18\x01 \x01(\tR\x06diskId\x12$\n" +
 	"\x0esource_zone_id\x18\x02 \x01(\tR\fsourceZoneId\x12.\n" +
-	"\x13destination_zone_id\x18\x03 \x01(\tR\x11destinationZoneId\"w\n" +
+	"\x13destination_zone_id\x18\x03 \x01(\tR\x11destinationZoneId\"\x83\x01\n" +
 	" ListDiskSnapshotSchedulesRequest\x12\x17\n" +
-	"\adisk_id\x18\x01 \x01(\tR\x06diskId\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x03R\bpageSize\x12\x1d\n" +
+	"\adisk_id\x18\x01 \x01(\tR\x06diskId\x12'\n" +
+	"\tpage_size\x18\x02 \x01(\x03B\n" +
+	"\xfa\xc71\x060-1000R\bpageSize\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\"\xa4\x01\n" +
 	"!ListDiskSnapshotSchedulesResponse\x12W\n" +
