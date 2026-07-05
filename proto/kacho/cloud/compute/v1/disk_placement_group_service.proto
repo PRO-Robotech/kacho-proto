@@ -26,7 +26,7 @@ service DiskPlacementGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.disk_placement_groups.get";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_disk_placement_group"
       from_request_field: "disk_placement_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -70,7 +70,7 @@ service DiskPlacementGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.disk_placement_groups.update";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_disk_placement_group"
       from_request_field: "disk_placement_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -86,7 +86,7 @@ service DiskPlacementGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.disk_placement_groups.delete";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_disk_placement_group"
       from_request_field: "disk_placement_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -98,7 +98,7 @@ service DiskPlacementGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.disk_placement_group_diskses.listDisks";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_disk_placement_group"
       from_request_field: "disk_placement_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -110,7 +110,7 @@ service DiskPlacementGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.disk_placement_group_operationses.listOperations";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_disk_placement_group"
       from_request_field: "disk_placement_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";

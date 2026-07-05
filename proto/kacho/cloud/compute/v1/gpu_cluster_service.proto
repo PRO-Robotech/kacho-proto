@@ -27,7 +27,7 @@ service GpuClusterService {
     option (kacho.iam.authz.v1.permission)        = "compute.gpu_clusters.get";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_gpu_cluster"
       from_request_field: "gpu_cluster_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -73,7 +73,7 @@ service GpuClusterService {
     option (kacho.iam.authz.v1.permission)        = "compute.gpu_clusters.update";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_gpu_cluster"
       from_request_field: "gpu_cluster_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -91,7 +91,7 @@ service GpuClusterService {
     option (kacho.iam.authz.v1.permission)        = "compute.gpu_clusters.delete";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_gpu_cluster"
       from_request_field: "gpu_cluster_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -103,7 +103,7 @@ service GpuClusterService {
     option (kacho.iam.authz.v1.permission)        = "compute.gpu_cluster_operationses.listOperations";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_gpu_cluster"
       from_request_field: "gpu_cluster_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -115,7 +115,7 @@ service GpuClusterService {
     option (kacho.iam.authz.v1.permission)        = "compute.gpu_cluster_instanceses.listInstances";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_gpu_cluster"
       from_request_field: "gpu_cluster_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";

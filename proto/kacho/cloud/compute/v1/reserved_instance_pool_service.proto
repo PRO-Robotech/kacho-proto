@@ -27,7 +27,7 @@ service ReservedInstancePoolService {
     option (kacho.iam.authz.v1.permission)        = "compute.reserved_instance_pools.get";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_reserved_instance_pool"
       from_request_field: "reserved_instance_pool_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -78,7 +78,7 @@ service ReservedInstancePoolService {
     option (kacho.iam.authz.v1.permission)        = "compute.reserved_instance_pools.update";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_reserved_instance_pool"
       from_request_field: "reserved_instance_pool_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -94,7 +94,7 @@ service ReservedInstancePoolService {
     option (kacho.iam.authz.v1.permission)        = "compute.reserved_instance_pools.delete";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_reserved_instance_pool"
       from_request_field: "reserved_instance_pool_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -106,7 +106,7 @@ service ReservedInstancePoolService {
     option (kacho.iam.authz.v1.permission)        = "compute.reserved_instance_pool_operationses.listOperations";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_reserved_instance_pool"
       from_request_field: "reserved_instance_pool_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -118,7 +118,7 @@ service ReservedInstancePoolService {
     option (kacho.iam.authz.v1.permission)        = "compute.reserved_instance_pool_instanceses.listInstances";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_reserved_instance_pool"
       from_request_field: "reserved_instance_pool_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";

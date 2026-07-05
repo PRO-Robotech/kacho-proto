@@ -47,9 +47,19 @@ service AuthorizeService {
     option (google.api.http) = { post: "/iam/v1/authorize:check" body: "*" };
     option (kacho.iam.authz.v1.permission)        = "iam.authorize.check";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
+    // Coarse OUTER gate only: this is a tenant-facing meta-query, not a
+    // resource CRUD. The old `project:<subject>` binding fed a `user:usr_xxx`
+    // ARN into a project-typed FGA object → a nonsensical object that never
+    // matched → deny-always. The subject's own type is embedded in the ARN and
+    // the queried resource is a nested ResourceRef, neither of which the gateway
+    // extractor can turn into an FGA object type. So the outer gate resolves the
+    // cluster singleton (`cluster:cluster_kacho_root`, viewer = user:* → every
+    // authenticated principal), and the AUTHORITATIVE per-subject / per-resource
+    // decision is enforced defense-in-depth by the handler's inner
+    // authorizeCaller gate (self-query ∨ cluster-admin ∨ resource-authority).
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
-      from_request_field: "subject"
+      object_type:        "cluster"
+      from_request_field: "*"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
@@ -84,9 +94,14 @@ service AuthorizeService {
     option (google.api.http) = { post: "/iam/v1/authorize:listObjects" body: "*" };
     option (kacho.iam.authz.v1.permission)        = "iam.authorize.listObjects";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
+    // Coarse OUTER gate (see AuthorizeService.Check): the old
+    // `project:<subject>` binding fed a subject ARN into a project object →
+    // deny-always. Gate on the cluster singleton; the handler's inner
+    // authorizeCaller gate (self ∨ cluster-admin — ListObjects has no single
+    // resource) is the authoritative decision.
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
-      from_request_field: "subject"
+      object_type:        "cluster"
+      from_request_field: "*"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
@@ -99,9 +114,17 @@ service AuthorizeService {
     option (google.api.http) = { post: "/iam/v1/authorize:listSubjects" body: "*" };
     option (kacho.iam.authz.v1.permission)        = "iam.authorize.listSubjects";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
+    // Coarse OUTER gate (see AuthorizeService.Check): the old
+    // `project:<resource.id>` binding hardcoded object_type=project while the
+    // queried resource may be any type (vpc_network / account / …) → the id was
+    // fed into the wrong-typed object → deny-always. The gateway extractor can
+    // read the nested ResourceRef.id but NOT its .type, so a per-resource-typed
+    // gate is not expressible here. Gate on the cluster singleton; the handler's
+    // inner authorizeCaller gate (cluster-admin ∨ resource-authority on the real
+    // resource.type:resource.id) is the authoritative decision.
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
-      from_request_field: "resource"
+      object_type:        "cluster"
+      from_request_field: "*"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
@@ -118,9 +141,13 @@ service AuthorizeService {
     option (google.api.http) = { post: "/iam/v1/authorize:expandRelations" body: "*" };
     option (kacho.iam.authz.v1.permission)        = "iam.authorize.expand";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
+    // Coarse OUTER gate (see AuthorizeService.ListSubjects — same
+    // `project:<resource.id>` deny-always bug and the same extractor limitation).
+    // Gate on the cluster singleton; the handler's inner authorizeCaller gate
+    // (cluster-admin ∨ resource-authority) is the authoritative decision.
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
-      from_request_field: "resource"
+      object_type:        "cluster"
+      from_request_field: "*"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }

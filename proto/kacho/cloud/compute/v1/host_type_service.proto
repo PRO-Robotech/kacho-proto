@@ -20,7 +20,7 @@ service HostTypeService {
     option (kacho.iam.authz.v1.permission)        = "compute.host_types.get";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_host_type"
       from_request_field: "host_type_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";

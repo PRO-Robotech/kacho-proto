@@ -28,7 +28,7 @@ service PlacementGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.placement_groups.get";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_placement_group"
       from_request_field: "placement_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -72,7 +72,7 @@ service PlacementGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.placement_groups.update";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_placement_group"
       from_request_field: "placement_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -88,7 +88,7 @@ service PlacementGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.placement_groups.delete";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_placement_group"
       from_request_field: "placement_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -100,7 +100,7 @@ service PlacementGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.placement_group_instanceses.listInstances";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_placement_group"
       from_request_field: "placement_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -112,7 +112,7 @@ service PlacementGroupService {
     option (kacho.iam.authz.v1.permission)        = "compute.placement_group_operationses.listOperations";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "compute_placement_group"
       from_request_field: "placement_group_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";

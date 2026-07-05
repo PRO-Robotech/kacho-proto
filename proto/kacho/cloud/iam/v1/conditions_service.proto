@@ -30,7 +30,7 @@ service ConditionsService {
     option (kacho.iam.authz.v1.permission)        = "iam.conditions.get";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "iam_condition"
       from_request_field: "condition_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -78,7 +78,7 @@ service ConditionsService {
     option (kacho.iam.authz.v1.permission)        = "iam.conditions.update";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "iam_condition"
       from_request_field: "condition_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -98,7 +98,7 @@ service ConditionsService {
     option (kacho.iam.authz.v1.permission)        = "iam.conditions.delete";
     option (kacho.iam.authz.v1.required_relation) = "editor";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "iam_condition"
       from_request_field: "condition_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
@@ -116,7 +116,7 @@ service ConditionsService {
     option (kacho.iam.authz.v1.permission)        = "iam.conditions.evaluate";
     option (kacho.iam.authz.v1.required_relation) = "viewer";
     option (kacho.iam.authz.v1.scope_extractor)   = {
-      object_type:        "project"
+      object_type:        "iam_condition"
       from_request_field: "condition_id"
     };
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
