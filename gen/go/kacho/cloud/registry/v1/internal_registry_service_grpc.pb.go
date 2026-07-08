@@ -43,7 +43,12 @@ type InternalRegistryServiceClient interface {
 	// недостижимых блобов/манифестов). Admin-tier на registry_registry.
 	TriggerGarbageCollection(ctx context.Context, in *TriggerGarbageCollectionRequest, opts ...grpc.CallOption) (*operation.Operation, error)
 	// GetRegistryStats — sync-статистика namespace (repo/tag count, суммарный
-	// размер, число уникальных блобов). Инфра-проекция, только :9091. Viewer-tier.
+	// размер, число уникальных блобов). Инфра-проекция, только :9091. READ
+	// инфра-чувствительных данных гейтим cluster read-tier `system_viewer`
+	// (НЕ object-scoped `v_get`): `system_viewer` не содержит wildcard `user:*`,
+	// поэтому tenant'ы read-доступа к инфра-статистике не получают (инфра закрыта),
+	// а Internal.* RPC не несёт verb-bearing (v_*) relation. Precedent —
+	// vpc InternalNetworkService/GetNetwork.
 	GetRegistryStats(ctx context.Context, in *GetRegistryStatsRequest, opts ...grpc.CallOption) (*RegistryStats, error)
 }
 
@@ -91,7 +96,12 @@ type InternalRegistryServiceServer interface {
 	// недостижимых блобов/манифестов). Admin-tier на registry_registry.
 	TriggerGarbageCollection(context.Context, *TriggerGarbageCollectionRequest) (*operation.Operation, error)
 	// GetRegistryStats — sync-статистика namespace (repo/tag count, суммарный
-	// размер, число уникальных блобов). Инфра-проекция, только :9091. Viewer-tier.
+	// размер, число уникальных блобов). Инфра-проекция, только :9091. READ
+	// инфра-чувствительных данных гейтим cluster read-tier `system_viewer`
+	// (НЕ object-scoped `v_get`): `system_viewer` не содержит wildcard `user:*`,
+	// поэтому tenant'ы read-доступа к инфра-статистике не получают (инфра закрыта),
+	// а Internal.* RPC не несёт verb-bearing (v_*) relation. Precedent —
+	// vpc InternalNetworkService/GetNetwork.
 	GetRegistryStats(context.Context, *GetRegistryStatsRequest) (*RegistryStats, error)
 	mustEmbedUnimplementedInternalRegistryServiceServer()
 }

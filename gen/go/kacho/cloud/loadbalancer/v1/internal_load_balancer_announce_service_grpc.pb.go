@@ -46,7 +46,12 @@ const (
 type InternalLoadBalancerAnnounceServiceClient interface {
 	// GetAnnounceState — read наблюдаемой per-zone announce-state одного LB.
 	// Viewer-gated, реальный per-RPC Check (НЕ exempt), mTLS. Не маршрутизируется
-	// на external endpoint — только internal mux api-gateway.
+	// на external endpoint — только internal mux api-gateway. READ
+	// инфра-чувствительной announce-state гейтим cluster read-tier `system_viewer`
+	// (НЕ object-scoped `v_get`): `system_viewer` не содержит wildcard `user:*`,
+	// поэтому tenant'ы read-доступа к инфра-данным не получают (инфра закрыта),
+	// а Internal.* RPC не несёт verb-bearing (v_*) relation. Precedent —
+	// vpc InternalNetworkService/GetNetwork.
 	GetAnnounceState(ctx context.Context, in *GetLoadBalancerAnnounceStateRequest, opts ...grpc.CallOption) (*LoadBalancerAnnounceState, error)
 	// ReportAnnounceState — inbound write-канал data-plane→nlb (новое одностороннее
 	// runtime-ребро kacho-vpc-implement → kacho-nlb, announce-state feedback).
@@ -108,7 +113,12 @@ func (c *internalLoadBalancerAnnounceServiceClient) ReportAnnounceState(ctx cont
 type InternalLoadBalancerAnnounceServiceServer interface {
 	// GetAnnounceState — read наблюдаемой per-zone announce-state одного LB.
 	// Viewer-gated, реальный per-RPC Check (НЕ exempt), mTLS. Не маршрутизируется
-	// на external endpoint — только internal mux api-gateway.
+	// на external endpoint — только internal mux api-gateway. READ
+	// инфра-чувствительной announce-state гейтим cluster read-tier `system_viewer`
+	// (НЕ object-scoped `v_get`): `system_viewer` не содержит wildcard `user:*`,
+	// поэтому tenant'ы read-доступа к инфра-данным не получают (инфра закрыта),
+	// а Internal.* RPC не несёт verb-bearing (v_*) relation. Precedent —
+	// vpc InternalNetworkService/GetNetwork.
 	GetAnnounceState(context.Context, *GetLoadBalancerAnnounceStateRequest) (*LoadBalancerAnnounceState, error)
 	// ReportAnnounceState — inbound write-канал data-plane→nlb (новое одностороннее
 	// runtime-ребро kacho-vpc-implement → kacho-nlb, announce-state feedback).
