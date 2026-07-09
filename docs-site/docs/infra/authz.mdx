@@ -1,0 +1,94 @@
+---
+id: authz
+sidebar_position: 3
+title: Авторизация
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Авторизация в контракте
+
+Авторизация в Kachō — не деталь реализации, а часть контракта: каждый RPC несёт декларативные
+authz-аннотации, а система прав опирается на общие типы. Это даёт две гарантии — авторизация
+описана единообразно для всех доменов и её нельзя «забыть» на отдельном методе.
+
+Задействованы два пакета: `kacho.iam.authz.v1` (per-RPC аннотации) и `kacho.cloud.access`
+(общие типы access-binding).
+
+## Per-RPC аннотации — `kacho.iam.authz.v1`
+
+Каждый RPC размечается опциями метода. Их читает генератор `protoc-gen-kacho-permissions`
+(строит канонический `permission_catalog.json`) и authz-middleware kacho-iam в рантайме.
+
+<table>
+  <thead><tr><th>Опция</th><th>Обяз.</th><th>Смысл</th></tr></thead>
+  <tbody>
+    <tr><td><code>(permission)</code></td><td>да</td><td>Каноническая строка права в форме <code>&lt;domain&gt;.&lt;resource&gt;.&lt;verb&gt;</code> (или литерал <code>"&lt;exempt&gt;"</code> для намеренно пропускающих authz RPC)</td></tr>
+    <tr><td><code>(required_relation)</code></td><td>да</td><td>Имя отношения OpenFGA на scope-объекте: <code>viewer</code> / <code>editor</code> / <code>owner</code> / <code>admin</code> / доменное</td></tr>
+    <tr><td><code>(scope_extractor)</code></td><td>да</td><td>Как из запроса вывести scope-объект: <code>object_type</code> + <code>from_request_field</code></td></tr>
+    <tr><td><code>(required_acr_min)</code></td><td>нет</td><td>Минимальный ACR-уровень аутентификации (строка, default <code>"2"</code>)</td></tr>
+  </tbody>
+</table>
+
+### Пример разметки RPC
+
+<CodeBlock language="protobuf">
+  {dedent`
+    rpc Create(CreateNetworkRequest) returns (operation.Operation) {
+      option (kacho.iam.authz.v1.permission)        = "vpc.networks.create";
+      option (kacho.iam.authz.v1.required_relation) = "editor";
+      option (kacho.iam.authz.v1.scope_extractor)   = {
+        object_type:        "project"
+        from_request_field: "project_id"
+      };
+      option (kacho.iam.authz.v1.required_acr_min)  = "2";
+    }
+  `}
+</CodeBlock>
+
+### ScopeExtractor
+
+`scope_extractor` описывает, как middleware строит FGA-объект `<object_type>:<id>`:
+
+- `object_type` — тип объекта в модели авторизации: либо иерархический scope (`cluster` /
+  `account` / `project`), либо per-resource тип (`vpc_network`, `compute_disk`, `iam_group`,
+  `iam_role`, …).
+- `from_request_field` — поле запроса, из которого берётся id объекта.
+
+Так, для примера выше Check выполняется как «есть ли у subject отношение `editor` на
+`project:<project_id>`».
+
+:::note Read гейтится viewer-tier, мутации — выше
+Read-RPC (`Get`/`List`) требуют, как правило, `viewer`; мутации — `editor`/`owner`/`admin` в
+зависимости от операции. Аннотации энфорсятся и на публичном (:9090), и на internal (:9091)
+листенере — internal-периметр не считается доверенным.
+:::
+
+## Общие типы access-binding — `kacho.cloud.access`
+
+Пакет `kacho.cloud.access` даёт типы, переиспользуемые доменами для управления доступом к своим
+ресурсам (например compute-ресурсы несут `ListAccessBindings` / `SetAccessBindings` /
+`UpdateAccessBindings`).
+
+<table>
+  <thead><tr><th>Тип</th><th>Поля / смысл</th></tr></thead>
+  <tbody>
+    <tr><td><code>Subject</code></td><td><code>id</code>, <code>type</code> (<code>userAccount</code> / <code>serviceAccount</code> / <code>federatedUser</code> / <code>system</code>)</td></tr>
+    <tr><td><code>AccessBinding</code></td><td><code>role_id</code> + <code>Subject</code> — привязка роли к субъекту</td></tr>
+    <tr><td><code>AccessPolicy</code> / <code>AccessPolicyBinding</code></td><td>шаблон политики доступа и его применение</td></tr>
+  </tbody>
+</table>
+
+:::info IAM как система прав
+Домен [IAM](/domains/iam) владеет собственными ресурсами прав первого класса (Role, AccessBinding,
+Group) и PDP-сервисом `AuthorizeService` (`Check` / `ListObjects` / `ListSubjects` / `WhoAmI`).
+Типы `kacho.cloud.access` — это переиспользуемый словарь для доменов, которые встраивают
+access-binding в свои ресурсы.
+:::
+
+## Дальше
+
+- Каталог IAM-ресурсов и PDP-методов — [домен IAM](/domains/iam).
+- Валидация полей (соседний набор расширений) — [Валидация](/infra/validation).
+- Инвалидация кэша authz на edge — [api-gateway](/infra/apigateway).

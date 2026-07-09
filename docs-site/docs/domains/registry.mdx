@@ -1,0 +1,57 @@
+---
+id: registry
+sidebar_position: 7
+title: Registry
+---
+
+# Домен Registry
+
+**Registry** — OCI-реестр артефактов платформы: место, куда пользователь пушит и откуда тянет
+контейнерные образы и Helm-чарты. Домен закрывает задачу «своё приватное хранилище образов с
+доступом по проектам»: Registry — контейнер верхнего уровня внутри проекта, внутри него живут
+репозитории (Repository), а в них — теги (Tag). Data-plane (сам `docker push/pull`) идёт по
+стандартному OCI-протоколу с проверкой токена, а control-plane API управляет реестрами и
+инвентарём.
+
+Пакет — `kacho.cloud.registry.v1`, REST-префикс — `/registry/v1`.
+
+## Ресурсы
+
+<table>
+  <thead><tr><th>Ресурс</th><th>Ключевые поля</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Registry</strong></td><td><code>id</code> · <code>projectId</code> · <code>name</code> · <code>description</code> · <code>labels</code> · <code>endpoint</code> · <code>repositoryCount</code> · <code>status</code> (ACTIVE/DELETING) · <code>createdAt</code></td></tr>
+    <tr><td><strong>Repository</strong></td><td><code>registryId</code> · <code>name</code> · <code>tagCount</code> · <code>sizeBytes</code> · <code>artifactType</code> — output-only проекция инвентаря реестра</td></tr>
+    <tr><td><strong>Tag</strong></td><td>тег в репозитории; удаляется через <code>DeleteTag</code></td></tr>
+  </tbody>
+</table>
+
+`ArtifactType` классифицирует содержимое репозитория: `CONTAINER_IMAGE` (docker/OCI образ, включая
+multi-arch index), `HELM_CHART` (Helm-чарт), `OTHER` (иной OCI-артефакт), `UNSPECIFIED` (ещё не
+классифицирован).
+
+## RegistryService (public)
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` | `GET /registry/v1/registries/{registry_id}` | sync |
+| `List` | `GET /registry/v1/registries` | sync |
+| `Create` | `POST /registry/v1/registries` | async · Operation |
+| `Update` | `PATCH /registry/v1/registries/{registry_id}` | async · Operation |
+| `Delete` | `DELETE /registry/v1/registries/{registry_id}` | async · Operation |
+| `ListRepositories` | `GET /registry/v1/registries/{registry_id}/repositories` | sync |
+| `ListTags` | `GET /registry/v1/registries/{registry_id}/repositories/{repository}/tags` | sync |
+| `DeleteTag` | `DELETE /registry/v1/registries/{registry_id}/repositories/{repository}/tags/{tag}` | async · Operation |
+| `ListOperations` | `GET /registry/v1/registries/{registry_id}/operations` | sync |
+
+## InternalRegistryService (:9091)
+
+| RPC | Возвращает | Назначение |
+|---|---|---|
+| `TriggerGarbageCollection` | Operation | Запуск сборки мусора в хранилище реестра |
+| `GetRegistryStats` | RegistryStats | Статистика реестра (инфра-данные) |
+
+## Дальше
+
+- Async-модель мутаций и `DeleteTag` — [Operation (LRO)](/infra/operation).
+- Доступ к реестрам по проектам — [IAM](/domains/iam) и [Авторизация](/infra/authz).

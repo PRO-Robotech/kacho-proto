@@ -1,0 +1,75 @@
+---
+id: naming
+sidebar_position: 2
+title: Именование и формат
+---
+
+# Именование и формат
+
+Конвенции имён и форматов — часть контракта: они одинаковы во всех доменах, и потребитель может на
+них полагаться. Отклонение допускается только осознанно.
+
+## Пакеты и go_package
+
+| Контекст | Значение |
+|---|---|
+| Proto-пакет домена | `kacho.cloud.<domain>.v1` (например `kacho.cloud.vpc.v1`) |
+| Proto-пакет инфраструктуры | `kacho.cloud.operation`, `kacho.cloud.access`, `kacho.cloud` (validation) |
+| Proto-пакет authz | `kacho.iam.authz.v1` |
+| Go-пакет (стубы) | `github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/<domain>/v1` |
+
+Каждый `.proto` объявляет `option go_package = ".../gen/go/kacho/cloud/<domain>/v1;<alias>v1"`.
+Раскладка на диске повторяет пакет: `proto/kacho/cloud/<domain>/v1/*.proto`.
+
+## JSON (REST) — camelCase
+
+REST-проекция через grpc-gateway использует **camelCase** для имён полей. Snake_case из `.proto`
+транслируется автоматически: `project_id` → `projectId`, `created_at` → `createdAt`,
+`v4_cidr_blocks` → `v4CidrBlocks`.
+
+| Proto (snake_case) | JSON (camelCase) |
+|---|---|
+| `project_id` | `projectId` |
+| `created_at` | `createdAt` |
+| `zone_id` | `zoneId` |
+| `default_security_group_id` | `defaultSecurityGroupId` |
+
+## REST-пути
+
+- Коллекция / элемент: `/<service>/v1/<resource>` и `/<service>/v1/<resource>/{id}`.
+- Стандартные методы: `POST` (Create), `GET` (Get/List), `PATCH` (Update), `DELETE` (Delete).
+- Действия сверх CRUD — суффикс-глагол через `:verb`: `/vpc/v1/subnets/{subnet_id}:add-cidr-blocks`,
+  `/compute/v1/instances/{instance_id}:start`, `/nlb/v1/networkLoadBalancers/{id}:attachTargetGroup`.
+- Под-коллекции ресурса — вложенный путь: `/vpc/v1/networks/{network_id}/subnets`,
+  `/compute/v1/instances/{instance_id}/operations`.
+
+Префикс REST-пути домена не всегда совпадает с именем пакета — он выбран под продукт: домен
+`loadbalancer` отдаёт пути под `/nlb/v1/…`, остальные — под `/<domain>/v1/…`.
+
+## Идентификаторы ресурсов
+
+ID генерирует сервер через `kacho-corelib/ids`: **3-символьный префикс типа** + строка
+crockford-base32. По префиксу читается тип ресурса. Примеры: IAM — `acc`/`prj`/`usr`/`sva`/`grp`/`rol`/`acb`;
+VPC — `net`/`sub`/`adr`/`rtb`/`sgr`/`gtw`/`nic`. Каждый домен документирует свой набор префиксов
+на своей странице.
+
+:::note Исключение — Geo
+Идентификаторы Region и Zone **назначает администратор** явно и человекочитаемо (`region-1`,
+`region-1-a`), они неизменяемы. Топология — стабильный справочник, её ключи постоянны. См.
+[домен Geo](/domains/geo).
+:::
+
+## Timestamps
+
+Временные поля — `google.protobuf.Timestamp`. В proto-ответе усечены до **секунд** (БД хранит
+микросекунды). В JSON — RFC 3339 (`"2026-06-24T10:00:00Z"`).
+
+## Метки (labels)
+
+`map<string,string> labels` — свободные пользовательские метки почти на каждом tenant-ресурсе.
+Кроме UX, метки участвуют в label-driven авторизации (см. [Авторизация](/infra/authz)).
+
+## Дальше
+
+- Единый формат ошибок — [Ошибки](/conventions/errors).
+- Пагинация и фильтрация списков — [Пагинация и фильтр](/conventions/pagination-filter).

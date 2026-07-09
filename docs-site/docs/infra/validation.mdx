@@ -1,0 +1,82 @@
+---
+id: validation
+sidebar_position: 2
+title: Валидация
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Валидация полей в контракте
+
+Ограничения полей объявляются прямо в `.proto` через кастомные field-опции. Это делает контракт
+самодокументируемым: правило валидации живёт рядом с полем, а не в отдельной спецификации, и одно
+и то же ограничение видят все потребители контракта.
+
+Опции определены в `kacho/cloud/validation.proto` (пакет `kacho.cloud`).
+
+## Field-опции
+
+<table>
+  <thead><tr><th>Опция</th><th>Тип</th><th>Смысл</th></tr></thead>
+  <tbody>
+    <tr><td><code>(required)</code></td><td>bool</td><td>Поле обязательно</td></tr>
+    <tr><td><code>(pattern)</code></td><td>string</td><td>Регулярное выражение, которому должно соответствовать значение</td></tr>
+    <tr><td><code>(value)</code></td><td>string</td><td>Ограничение на значение</td></tr>
+    <tr><td><code>(size)</code></td><td>string</td><td>Ограничение на размер коллекции (например <code>"1-16"</code>)</td></tr>
+    <tr><td><code>(length)</code></td><td>string</td><td>Ограничение на длину строки (например <code>"&lt;=100"</code>, <code>"1-64"</code>)</td></tr>
+    <tr><td><code>(unique)</code></td><td>bool</td><td>Элементы коллекции уникальны</td></tr>
+    <tr><td><code>(map_key)</code></td><td>MapKeySpec</td><td>Ограничения на ключи map-поля (<code>value</code> / <code>pattern</code> / <code>length</code>)</td></tr>
+    <tr><td><code>(bytes)</code></td><td>string</td><td>Ограничение на bytes-поле</td></tr>
+  </tbody>
+</table>
+
+## Oneof-опция
+
+<table>
+  <thead><tr><th>Опция</th><th>Тип</th><th>Смысл</th></tr></thead>
+  <tbody>
+    <tr><td><code>(exactly_one)</code></td><td>bool</td><td>Ровно одна ветка oneof должна быть задана</td></tr>
+  </tbody>
+</table>
+
+## Пример
+
+<CodeBlock language="protobuf">
+  {dedent`
+    message Subject {
+      string id = 1 [
+        (kacho.cloud.length)   = "<=100",
+        (kacho.cloud.required) = true
+      ];
+      string type = 2 [
+        (kacho.cloud.length)   = "<=100",
+        (kacho.cloud.required) = true
+      ];
+    }
+
+    message Rule {
+      repeated string resources = 2 [
+        (kacho.cloud.size)   = "1-16",
+        (kacho.cloud.length) = "1-64"
+      ];
+    }
+  `}
+</CodeBlock>
+
+## Диапазоны extension-номеров
+
+Field-опции валидации занимают диапазон `101400+`, чтобы не конфликтовать с другими наборами
+расширений (`kacho.cloud.api` — 87334, authz-опции `kacho.iam.authz.v1` — `[50000, 50999]`).
+Разведение диапазонов гарантирует, что аннотации разных подсистем сосуществуют на одном поле/методе
+без коллизий.
+
+## Связь с ошибками
+
+Нарушение ограничения превращается в `INVALID_ARGUMENT` на входе RPC (до обращения к БД). Полный
+контракт ошибок — [Ошибки](/conventions/errors).
+
+## Дальше
+
+- Per-RPC authz-аннотации (отдельный набор расширений) — [Авторизация](/infra/authz).
+- Как значения проверяются в рантайме — утилиты `kacho-corelib/validate`.

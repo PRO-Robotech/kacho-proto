@@ -1,0 +1,68 @@
+---
+id: pagination-filter
+sidebar_position: 4
+title: Пагинация и фильтр
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Пагинация и фильтр
+
+Все `List`-методы следуют единому cursor-based контракту пагинации и общему стилю фильтрации.
+
+## Cursor-пагинация
+
+- Порядок — `(created_at, id)` ASC.
+- Запрос несёт `page_size` и `page_token`; ответ — `next_page_token`.
+- `page_token` — **opaque** base64-строка, кодирующая позицию `{created_at, id}`. Клиент не
+  разбирает её содержимое, а просто передаёт обратно для следующей страницы.
+
+<CodeBlock language="bash">
+  {dedent`
+    # первая страница
+    curl '.../vpc/v1/networks?pageSize=50'
+
+    # следующая страница — передаём nextPageToken из ответа
+    curl '.../vpc/v1/networks?pageSize=50&pageToken=Cg4K…'
+  `}
+</CodeBlock>
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "networks": [ /* … */ ],
+      "nextPageToken": "Cg4KMjAyNi0wNi0yNFQxMDowMDowMFo…"
+    }
+  `}
+</CodeBlock>
+
+Пустой `nextPageToken` в ответе означает, что страница последняя.
+
+## page_size
+
+- `0` → сервер применяет default (`50`).
+- Максимум — `1000`; больше → усечение либо `INVALID_ARGUMENT` (по политике сервиса).
+- Значение валидируется общей утилитой `kacho-corelib/validate` (`PageSize`).
+- «Мусорный» `page_token` (не декодируется) → `INVALID_ARGUMENT`.
+
+## filter
+
+Часть `List`-запросов принимает поле `filter` — строку с whitelist-полей, разбираемую
+`kacho-corelib/filter`. Набор допустимых полей фиксирован per-resource (текущая фаза — как правило
+`name=`). Поле вне whitelist → `INVALID_ARGUMENT`.
+
+## Специализированные List
+
+Помимо базового `List`, домены заводят целевые списки под конкретный доступ к данным — они тоже
+синхронные и пагинируемые. Примеры:
+
+- `AddressService.ListBySubnet`, `AddressService.GetByValue` (VPC);
+- `NetworkService.ListSubnets` / `ListSecurityGroups` / `ListRouteTables` (VPC);
+- `AccessBindingService.ListByScope` / `ListBySubject` / `ListByRole` (IAM);
+- `<Resource>.ListOperations` — история операций конкретного ресурса (во всех доменах).
+
+## Дальше
+
+- Общий костяк ресурса и сервиса — [Форма ресурса и Operations](/conventions/resource-shape).
+- Формат ошибок валидации — [Ошибки](/conventions/errors).

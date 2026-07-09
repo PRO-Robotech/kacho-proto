@@ -1,0 +1,59 @@
+---
+id: apigateway
+sidebar_position: 4
+title: api-gateway
+---
+
+import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
+
+# api-gateway — internal-контракты edge
+
+Пакет `kacho.cloud.apigateway.v1` содержит internal-контракты edge-компонента платформы
+(`kacho-api-gateway`). Это не tenant-поверхность: сервис живёт только на internal mTLS-листенере
+(:9091) и никогда не публикуется на внешнем TLS REST mux.
+
+## InternalAuthzCacheService
+
+api-gateway кэширует решения авторизации, чтобы не ходить в PDP на каждый запрос. Когда доступ
+меняется (отзыв/выдача binding, изменение членства в группе), кэш нужно быстро сбросить —
+иначе отозванный доступ жил бы до истечения TTL. Этот сервис решает такую задачу: push-инвалидация
+кэша по конкретному subject.
+
+### InvalidateSubject
+
+<ApiOperation method="gRPC" endpoint="InternalAuthzCacheService.InvalidateSubject">
+
+Сбрасывает записи decision-кэша, относящиеся к указанному subject. Идемпотентен: subject без
+записей в кэше возвращает `NotFound` (drainer трактует это как «уже применено»). Ответ —
+`google.protobuf.Empty`; число затронутых записей публикуется метрикой, а не в теле ответа.
+
+</ApiOperation>
+
+**Запрос `InvalidateSubjectRequest`:**
+
+<table>
+  <thead><tr><th>Поле</th><th>Смысл</th></tr></thead>
+  <tbody>
+    <tr><td><code>subject</code></td><td>FGA-идентификатор <code>"&lt;type&gt;:&lt;id&gt;"</code> (например <code>user:usr_abc</code>, <code>group:grp_team</code>). Обязателен; пустой → <code>INVALID_ARGUMENT</code></td></tr>
+    <tr><td><code>resource_type</code> / <code>resource_id</code></td><td>Опциональная подсказка scope; на текущей фазе инвалидируются все записи subject'а (безопасная верхняя граница)</td></tr>
+    <tr><td><code>event_type</code></td><td>Диагностика: <code>binding_revoke</code> / <code>binding_grant</code> / <code>jit_revoke</code> / <code>bg_revoke</code> / <code>group_member_change</code> (влияет только на лог/метрику)</td></tr>
+  </tbody>
+</table>
+
+## Модель доставки
+
+Единственный вызывающий — kacho-iam (`SubjectChangeApplier`) поверх mutual-TLS. RPC освобождён от
+per-request authz (`permission = "<exempt>"`), потому что доступен только на internal-листенере и
+вызывается доверенным пиром по mTLS. Гарантия latency: хотя бы одна реплика api-gateway сходится
+за &lt; 1 c после commit'а отзыва; все HA-реплики — за ≤ 30 c через фоновый poll-loop как страховку.
+
+:::note Почему это internal
+Инвалидация кэша авторизации — сугубо внутренний механизм согласованности. Выставлять её на внешнюю
+поверхность нельзя: это дало бы возможность влиять на кэш решений извне. Поэтому сервис
+регистрируется только на internal mTLS-mux.
+:::
+
+## Дальше
+
+- Как устроены authz-аннотации, кэш которых сбрасывается — [Авторизация](/infra/authz).
+- Домен-владелец subject'ов и binding'ов — [IAM](/domains/iam).

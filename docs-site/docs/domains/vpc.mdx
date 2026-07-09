@@ -1,0 +1,126 @@
+---
+id: vpc
+sidebar_position: 3
+title: VPC
+---
+
+# Домен VPC
+
+**VPC** — сетевой домен платформы: приватные сети и всё, что к ним крепится. Он закрывает задачу
+«изолированное сетевое пространство проекта с управляемой адресацией, маршрутизацией и
+фильтрацией». Network задаёт границу изоляции, Subnet нарезает её на подсети с CIDR-блоками,
+Address управляет IP-адресами, SecurityGroup фильтрует трафик, RouteTable задаёт маршруты, Gateway
+и NetworkInterface подключают ресурсы к сети.
+
+Пакет — `kacho.cloud.vpc.v1`, REST-префикс — `/vpc/v1`. ID-префиксы: `net`, `sub`, `adr`, `rtb`,
+`sgr`, `gtw`, `nic`.
+
+## Ресурсы
+
+<table>
+  <thead><tr><th>Ресурс</th><th>Ключевые поля</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Network</strong></td><td><code>id</code> · <code>projectId</code> · <code>name</code> · <code>labels</code> · <code>defaultSecurityGroupId</code></td></tr>
+    <tr><td><strong>Subnet</strong></td><td><code>id</code> · <code>networkId</code> · <code>placementType</code> · <code>zoneId</code>/<code>regionId</code> · <code>v4CidrBlocks</code>/<code>v6CidrBlocks</code> · <code>routeTableId</code> · <code>dhcpOptions</code></td></tr>
+    <tr><td><strong>Address</strong></td><td><code>id</code> · <code>projectId</code> · <code>address</code> (oneof int/ext v4/v6) · <code>reserved</code> · <code>used</code> · <code>type</code> · <code>ipVersion</code> · <code>dnsRecords</code> · <code>usedBy</code></td></tr>
+    <tr><td><strong>SecurityGroup</strong></td><td><code>id</code> · <code>networkId</code> · правила фильтрации (rules)</td></tr>
+    <tr><td><strong>RouteTable</strong></td><td><code>id</code> · <code>networkId</code> · набор маршрутов (routes)</td></tr>
+    <tr><td><strong>Gateway</strong></td><td><code>id</code> · <code>projectId</code> — сетевой шлюз</td></tr>
+    <tr><td><strong>NetworkInterface</strong></td><td><code>id</code> — сетевой интерфейс (NIC), first-class ресурс, отдельный от Instance</td></tr>
+  </tbody>
+</table>
+
+`zoneId` / `regionId` подсети валидируются через [Geo](/domains/geo). Within-service связи (NIC →
+Address → Subnet → Network) защищены FK на уровне БД.
+
+## NetworkService
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` | `GET /vpc/v1/networks/{network_id}` | sync |
+| `List` | `GET /vpc/v1/networks` | sync |
+| `Create` | `POST /vpc/v1/networks` | async |
+| `Update` | `PATCH /vpc/v1/networks/{network_id}` | async |
+| `Delete` | `DELETE /vpc/v1/networks/{network_id}` | async |
+| `ListSubnets` | `GET /vpc/v1/networks/{network_id}/subnets` | sync |
+| `ListSecurityGroups` | `GET /vpc/v1/networks/{network_id}/security_groups` | sync |
+| `ListRouteTables` | `GET /vpc/v1/networks/{network_id}/route_tables` | sync |
+| `ListOperations` | `GET /vpc/v1/networks/{network_id}/operations` | sync |
+
+## SubnetService
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` | `GET /vpc/v1/subnets/{subnet_id}` | sync |
+| `List` | `GET /vpc/v1/subnets` | sync |
+| `Create` | `POST /vpc/v1/subnets` | async |
+| `Update` | `PATCH /vpc/v1/subnets/{subnet_id}` | async |
+| `AddCidrBlocks` | `POST /vpc/v1/subnets/{subnet_id}:add-cidr-blocks` | async |
+| `RemoveCidrBlocks` | `POST /vpc/v1/subnets/{subnet_id}:remove-cidr-blocks` | async |
+| `Delete` | `DELETE /vpc/v1/subnets/{subnet_id}` | async |
+| `ListOperations` | `GET /vpc/v1/subnets/{subnet_id}/operations` | sync |
+| `ListUsedAddresses` | `GET /vpc/v1/subnets/{subnet_id}/addresses` | sync |
+
+## AddressService
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` | `GET /vpc/v1/addresses/{address_id}` | sync |
+| `GetByValue` | `GET /vpc/v1/addresses:byValue` | sync |
+| `List` | `GET /vpc/v1/addresses` | sync |
+| `ListBySubnet` | `GET /vpc/v1/addresses:bySubnet` | sync |
+| `Create` | `POST /vpc/v1/addresses` | async |
+| `Update` | `PATCH /vpc/v1/addresses/{address_id}` | async |
+| `Delete` | `DELETE /vpc/v1/addresses/{address_id}` | async |
+| `ListOperations` | `GET /vpc/v1/addresses/{address_id}/operations` | sync |
+
+## SecurityGroupService
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` | `GET /vpc/v1/securityGroups/{security_group_id}` | sync |
+| `List` | `GET /vpc/v1/securityGroups` | sync |
+| `Create` | `POST /vpc/v1/securityGroups` | async |
+| `Update` | `PATCH /vpc/v1/securityGroups/{security_group_id}` | async |
+| `UpdateRules` | `PATCH /vpc/v1/securityGroups/{security_group_id}/rules` | async |
+| `UpdateRule` | `PATCH /vpc/v1/securityGroups/{security_group_id}/rules/{rule_id}` | async |
+| `Delete` | `DELETE /vpc/v1/securityGroups/{security_group_id}` | async |
+| `ListOperations` | `GET /vpc/v1/securityGroups/{security_group_id}/operations` | sync |
+
+## RouteTableService
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` | `GET /vpc/v1/routeTables/{route_table_id}` | sync |
+| `List` | `GET /vpc/v1/routeTables` | sync |
+| `Create` | `POST /vpc/v1/routeTables` | async |
+| `Update` | `PATCH /vpc/v1/routeTables/{route_table_id}` | async |
+| `Delete` | `DELETE /vpc/v1/routeTables/{route_table_id}` | async |
+| `AddRoutes` | `POST /vpc/v1/routeTables/{route_table_id}:add-routes` | async |
+| `RemoveRoutes` | `POST /vpc/v1/routeTables/{route_table_id}:remove-routes` | async |
+| `UpdateRoute` | `POST /vpc/v1/routeTables/{route_table_id}:update-route` | async |
+| `ListOperations` | `GET /vpc/v1/routeTables/{route_table_id}/operations` | sync |
+
+## GatewayService · NetworkInterfaceService
+
+Оба — стандартный CRUD-набор (`Get`/`List` sync, `Create`/`Update`/`Delete` async, `ListOperations`
+sync) под `/vpc/v1/gateways/…` и `/vpc/v1/networkInterfaces/…` соответственно.
+
+## Internal-сервисы (:9091)
+
+| Сервис | Назначение |
+|---|---|
+| `InternalAddressPoolService` | Admin-CRUD пулов адресов (AddressPool) + cidr-блоки + bind как network-default. Публикуется только на internal mux |
+| `InternalAddressService` | IPAM-аллокация (`AllocateInternalIP`/`AllocateExternalIP` v4/v6) и reference-учёт адресов для consumer-сервисов |
+| `InternalNetworkService` | Служебные операции над сетью (default SG, internal-проекция сети) |
+| `InternalResourceLifecycleService` · `InternalWatchService` | Потоки событий (`Subscribe` / `Watch`) для операторов data-plane |
+
+:::warning AddressPool — только internal
+`AddressPool` (`/vpc/v1/addressPools/…`) — admin-ресурс на cluster-internal листенере; на внешний
+endpoint не публикуется. Его CRUD возвращает ресурс синхронно, а не через `Operation`.
+:::
+
+## Дальше
+
+- Async-модель и action-RPC (`:add-cidr-blocks`, `:add-routes`) — [Operation (LRO)](/infra/operation).
+- Валидация `zoneId`/`regionId` — [Geo](/domains/geo).

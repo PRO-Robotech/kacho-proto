@@ -1,0 +1,157 @@
+---
+id: iam
+sidebar_position: 2
+title: IAM
+---
+
+# Домен IAM
+
+**IAM** — домен идентичности и доступа: кто есть кто в платформе и что кому можно. Он закрывает
+задачу «управляемый доступ к ресурсам с иерархией владения»: Account — верхний контейнер владения,
+Project — рабочая единица внутри него, User / ServiceAccount / Group — субъекты, Role описывает
+набор прав, AccessBinding связывает роль с субъектом на конкретном scope. Отдельно IAM выступает
+как PDP (policy decision point) — `AuthorizeService` отвечает на вопрос «можно ли subject'у выполнить
+действие».
+
+Пакет — `kacho.cloud.iam.v1`, REST-префикс — `/iam/v1`. ID-префиксы: `acc`, `prj`, `usr`, `sva`,
+`grp`, `rol`, `acb`.
+
+## Ресурсы
+
+<table>
+  <thead><tr><th>Ресурс</th><th>Ключевые поля</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Account</strong></td><td><code>id</code> · <code>name</code> · <code>labels</code> · <code>ownerUserId</code> · <code>createdAt</code></td></tr>
+    <tr><td><strong>Project</strong></td><td><code>id</code> · <code>accountId</code> · <code>name</code> · <code>labels</code> · <code>createdAt</code></td></tr>
+    <tr><td><strong>User</strong></td><td><code>id</code> · <code>externalId</code> · <code>email</code> · <code>displayName</code> · <code>accountId</code> · <code>inviteStatus</code> · <code>invitedBy</code></td></tr>
+    <tr><td><strong>ServiceAccount</strong></td><td><code>id</code> · <code>accountId</code>/<code>projectId</code> · <code>name</code> · <code>enabled</code> · <code>labels</code></td></tr>
+    <tr><td><strong>Group</strong></td><td><code>id</code> · <code>accountId</code> · <code>name</code> · <code>labels</code> + члены (GroupMember)</td></tr>
+    <tr><td><strong>Role</strong></td><td><code>id</code> · <code>accountId</code>/<code>projectId</code>/<code>clusterId</code> · <code>name</code> · <code>isSystem</code> · <code>rules</code> (resources/verbs/module) · <code>labels</code> · <code>resourceVersion</code></td></tr>
+    <tr><td><strong>AccessBinding</strong></td><td><code>id</code> · <code>subjects</code> · <code>roleId</code> · <code>scopeRef</code> (tier + id) · <code>status</code> · <code>conditionId</code> · <code>expiresAt</code> · <code>labels</code></td></tr>
+    <tr><td><strong>Condition</strong></td><td>условие для условной привязки доступа (builtin + пользовательские)</td></tr>
+  </tbody>
+</table>
+
+Role описывает права через `rules` (наборы `resources` / `verbs` / `resource_names` / `module`) —
+K8s-подобная rules-модель. AccessBinding связывает роль с одним или несколькими субъектами на scope
+(cluster / account / project или конкретный ресурс).
+
+## Ресурсы идентичности
+
+**AccountService**
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` · `List` | `GET /iam/v1/accounts/{account_id}` · `GET /iam/v1/accounts` | sync |
+| `Create` · `Update` · `Delete` | `POST /iam/v1/accounts` · `PATCH`/`DELETE .../{account_id}` | async |
+| `ListOperations` | `GET /iam/v1/accounts/{account_id}/operations` | sync |
+| `ListAllOperations` | `GET /iam/v1/accounts/{account_id}/operations:all` | sync |
+
+**ProjectService** — стандартный CRUD-набор под `/iam/v1/projects/…` (`Get`/`List` sync,
+`Create`/`Update`/`Delete` async, `ListOperations` sync).
+
+**UserService**
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` · `List` | `GET /iam/v1/users/{user_id}` · `GET /iam/v1/users` | sync |
+| `Invite` | `POST /iam/v1/users:invite` | async |
+| `Update` · `Delete` | `PATCH`/`DELETE /iam/v1/users/{user_id}` | async |
+| `ListOperations` | `GET /iam/v1/users/{user_id}/operations` | sync |
+
+**ServiceAccountService** — CRUD-набор под `/iam/v1/serviceAccounts/…` (`Get`/`List` sync,
+`Create`/`Update`/`Delete` async, `ListOperations` sync).
+
+**GroupService**
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` · `List` | `GET /iam/v1/groups/{group_id}` · `GET /iam/v1/groups` | sync |
+| `Create` · `Update` · `Delete` | `POST /iam/v1/groups` · `PATCH`/`DELETE .../{group_id}` | async |
+| `AddMember` · `RemoveMember` | `POST /iam/v1/groups/{group_id}:addMember` · `:removeMember` | async |
+| `ListMembers` | `GET /iam/v1/groups/{group_id}:listMembers` | sync |
+| `ListOperations` | `GET /iam/v1/groups/{group_id}/operations` | sync |
+
+## Роли и доступ
+
+**RoleService** — CRUD под `/iam/v1/roles/…` (`Get`/`List` sync, `Create`/`Update`/`Delete` async,
+`ListOperations` sync).
+
+**AccessBindingService**
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` | `GET /iam/v1/accessBindings/{access_binding_id}` | sync |
+| `Create` · `Update` · `Delete` | `POST /iam/v1/accessBindings` · `PATCH`/`DELETE .../{id}` | async |
+| `ListByScope` | `GET /iam/v1/accessBindings:listByScope` | sync |
+| `ListBySubject` | `GET /iam/v1/accessBindings:listBySubject` | sync |
+| `ListByRole` | `GET /iam/v1/accessBindings:listByRole` | sync |
+| `ListByAccount` | `GET /iam/v1/accounts/{account_id}/accessBindings` | sync |
+| `ListSubjectPrivileges` | `GET /iam/v1/accessBindings:listSubjectPrivileges` | sync |
+| `ListAssignableRoles` | `GET /iam/v1/accessBindings:listAssignableRoles` | sync |
+| `ExpandAccess` | `GET /iam/v1/accessBindings:expandAccess` | sync |
+| `ListOperations` | `GET /iam/v1/accessBindings/{access_binding_id}/operations` | sync |
+
+**ConditionsService**
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` · `List` | `GET /iam/v1/conditions/{condition_id}` · `GET /iam/v1/conditions` | sync |
+| `Create` · `Update` · `Delete` | `POST /iam/v1/conditions` · `PATCH`/`DELETE .../{condition_id}` | async |
+| `Evaluate` | `POST /iam/v1/conditions/{condition_id}:evaluate` | sync |
+
+## PDP — AuthorizeService
+
+`AuthorizeService` — точка принятия решений об авторизации. Синхронные запросы к модели прав.
+
+| RPC | REST | Назначение |
+|---|---|---|
+| `Check` | `POST /iam/v1/authorize:check` | Разрешено ли действие subject'у на объекте |
+| `BatchCheck` | `POST /iam/v1/authorize:batchCheck` | Пакетная проверка нескольких пар |
+| `ListObjects` | `POST /iam/v1/authorize:listObjects` | Объекты, доступные subject'у (для list-фильтрации) |
+| `ListSubjects` | `POST /iam/v1/authorize:listSubjects` | Субъекты с доступом к объекту |
+| `ExpandRelations` | `POST /iam/v1/authorize:expandRelations` | Раскрытие графа отношений |
+| `WhoAmI` | `GET /iam/v1/me` | Идентичность текущего subject'а |
+
+**PermissionCatalogService** — `ListPermissionCatalog` (`GET /iam/v1/permissionCatalog`): канонический
+каталог прав платформы, собираемый из authz-аннотаций `.proto` (см. [Авторизация](/infra/authz)).
+
+## Учётные данные
+
+**SAKeyService** (ключи service-account)
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Issue` | `POST /iam/v1/serviceAccounts/{service_account_id}/keys` | async |
+| `List` | `GET /iam/v1/serviceAccounts/{service_account_id}/keys` | sync |
+| `Revoke` | `DELETE /iam/v1/serviceAccounts/{service_account_id}/keys/{key_id}` | async |
+
+**UserTokenService** (токены пользователя)
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Issue` | `POST /iam/v1/users/{user_id}/tokens` | async |
+| `List` | `GET /iam/v1/users/{user_id}/tokens` | sync |
+| `Revoke` | `DELETE /iam/v1/users/{user_id}/tokens/{token_id}` | async |
+
+## Internal-сервисы (:9091)
+
+| Сервис | Ключевые RPC | Назначение |
+|---|---|---|
+| `InternalIAMService` | `Check` · `LookupSubject` · `RegisterResource` · `UnregisterResource` · `WriteCreatorTuple` · `PollSubjectChanges` | Per-RPC authz-gate для всех сервисов + регистрация owner-таплов ресурсов |
+| `InternalAuthorizeService` | `WriteTuples` · `ReadTuples` · `ReloadModel` · `GetFGAStoreInfo` | Прямое управление таплами и моделью авторизации |
+| `InternalClusterService` | `Get` · `GrantAdmin` · `RevokeAdmin` · `ListAdmins` | Cluster-scope и cluster-admin гранты |
+| `InternalUserService` | `UpsertFromIdentity` · `Get` · `OnRecoveryCompleted` | Синхронизация пользователей из провайдера идентичности |
+| `InternalIamHooksService` | `TokenHook` · `RefreshTokenHook` | Хуки обогащения токенов на выдаче/refresh |
+| `InternalSessionRevocationsService` | `Revoke` · `IsRevoked` · `ListByUser` | Отзыв сессий |
+| `InternalOperationsService` | `ListIamOperations` | Служебный список операций домена |
+
+:::info IAM зовут все сервисы
+`InternalIAMService.Check` — authz-gate, который вызывает каждый RPC каждого домена (см.
+[Авторизация](/infra/authz)). IAM — leaf-домен: он не зависит ни от одного другого сервиса.
+:::
+
+## Дальше
+
+- Как устроены authz-аннотации и per-RPC Check — [Авторизация](/infra/authz).
+- Async-модель мутаций — [Operation (LRO)](/infra/operation).

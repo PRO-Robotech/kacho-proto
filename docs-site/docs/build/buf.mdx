@@ -1,0 +1,107 @@
+---
+id: buf
+sidebar_position: 1
+title: Сборка через buf
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Сборка через buf
+
+Контракт линтится и генерируется инструментом [`buf`](https://buf.build). Конфигурация — в каталоге
+`proto/` (`buf.yaml`, `buf.gen.yaml`). Единый прогон на всё дерево — то, ради чего контракты собраны
+в одном репозитории.
+
+## buf.yaml — линт и совместимость
+
+<CodeBlock language="yaml">
+  {dedent`
+    version: v2
+    modules:
+      - path: .
+    lint:
+      use:
+        - STANDARD
+      except:
+        - PACKAGE_VERSION_SUFFIX
+        - RPC_REQUEST_STANDARD_NAME
+        - RPC_RESPONSE_STANDARD_NAME
+        - RPC_REQUEST_RESPONSE_UNIQUE
+        - ENUM_VALUE_PREFIX
+        - ENUM_ZERO_VALUE_SUFFIX
+      ignore:
+        - google
+    breaking:
+      use:
+        - FILE
+      ignore:
+        - google
+  `}
+</CodeBlock>
+
+- **lint** — базовый набор `STANDARD` с точечными исключениями. Исключения осознанные: например,
+  `RPC_REQUEST_RESPONSE_UNIQUE` снят, потому что несколько RPC переиспользуют общий response
+  (`ListAccessBindingsResponse`), а `ENUM_ZERO_VALUE_SUFFIX` — из-за собственной конвенции
+  именования enum'ов.
+- **breaking** — уровень `FILE`: изменение не должно ломать совместимость на уровне файла.
+- vendored `google/*` исключены из обеих проверок (это внешние канонические контракты).
+
+<CodeBlock language="bash">
+  {dedent`
+    cd proto
+    buf lint
+    buf breaking --against '.git#branch=main,subdir=proto'
+  `}
+</CodeBlock>
+
+## buf.gen.yaml — кодогенерация
+
+<CodeBlock language="yaml">
+  {dedent`
+    version: v2
+    plugins:
+      - local: protoc-gen-go
+        out: ../gen/go
+        opt: paths=source_relative
+      - local: protoc-gen-go-grpc
+        out: ../gen/go
+        opt:
+          - paths=source_relative
+          - require_unimplemented_servers=true
+      - local: protoc-gen-grpc-gateway
+        out: ../gen/go
+        opt:
+          - paths=source_relative
+          - generate_unbound_methods=true
+    inputs:
+      - directory: .
+        paths:
+          - kacho
+  `}
+</CodeBlock>
+
+Три плагина формируют полный SDK:
+
+| Плагин | Что генерирует |
+|---|---|
+| `protoc-gen-go` | Go-структуры сообщений и enum'ов |
+| `protoc-gen-go-grpc` | gRPC-клиенты и серверные интерфейсы (`require_unimplemented_servers=true` — forward-compat серверов) |
+| `protoc-gen-grpc-gateway` | REST-проекцию по `google.api.http` (`generate_unbound_methods=true` — стабы и для RPC без http-аннотации) |
+
+Выход — `../gen/go` (`paths=source_relative` сохраняет раскладку каталогов). Генерируется только
+`kacho`-поддерево (vendored google — вход, но не выход).
+
+<CodeBlock language="bash">
+  {dedent`
+    cd proto
+    buf generate
+    cd ..
+    go build ./...
+  `}
+</CodeBlock>
+
+## Дальше
+
+- Раскладка и подключение сгенерированного кода — [Сгенерированные SDK](/build/generated-stubs).
+- Как заводится новый контракт — [Быстрый старт](/getting-started).

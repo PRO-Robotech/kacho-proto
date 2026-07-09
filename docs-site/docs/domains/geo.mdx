@@ -1,0 +1,70 @@
+---
+id: geo
+sidebar_position: 6
+title: Geo
+---
+
+# Домен Geo
+
+**Geo** отвечает на фундаментальный вопрос платформы: *какие регионы и зоны доступности
+существуют*. Region — верхнеуровневый географический элемент, Zone — зона доступности внутри
+региона. Это глобальные cluster-scoped справочники: они не принадлежат проекту или аккаунту, а
+описывают саму инфраструктуру. Вынесение топологии в отдельный домен с единственным владельцем
+устраняет дублирование справочников — все сервисы (Compute, VPC, Load Balancer) валидируют
+`zoneId` / `regionId` через этот домен.
+
+Пакет — `kacho.cloud.geo.v1`, REST-префикс — `/geo/v1`.
+
+## Ресурсы
+
+<table>
+  <thead><tr><th>Ресурс</th><th>Ключевые поля</th><th>Поверхность</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Region</strong></td><td><code>id</code> (immutable, admin-assigned) · <code>name</code> · <code>createdAt</code></td><td>public read · admin CRUD</td></tr>
+    <tr><td><strong>Zone</strong></td><td><code>id</code> · <code>regionId</code> · <code>status</code> (UP/DOWN) · <code>name</code> · <code>createdAt</code></td><td>public read · admin CRUD</td></tr>
+  </tbody>
+</table>
+
+Идентификаторы Region/Zone назначает администратор явно и человекочитаемо (`region-1`,
+`region-1-a`) — они неизменяемы. Внутри домена связь `Zone.regionId → Region.id` защищена FK
+`ON DELETE RESTRICT`: регион с зонами удалить нельзя, пока зоны не удалены.
+
+## RegionService (public, sync)
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` | `GET /geo/v1/regions/{region_id}` | sync |
+| `List` | `GET /geo/v1/regions` | sync |
+
+## ZoneService (public, sync)
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` | `GET /geo/v1/zones/{zone_id}` | sync |
+| `List` | `GET /geo/v1/zones` | sync |
+
+## Internal-сервисы (admin, :9091)
+
+Наполнение справочника — административные async-операции на cluster-internal листенере; на внешний
+endpoint не публикуются.
+
+**InternalRegionService** и **InternalZoneService:**
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Create` | `POST /geo/v1/regions` · `POST /geo/v1/zones` | async · Operation |
+| `Update` | `PATCH /geo/v1/regions/{region_id}` · `PATCH /geo/v1/zones/{zone_id}` | async · Operation |
+| `Delete` | `DELETE /geo/v1/regions/{region_id}` · `DELETE /geo/v1/zones/{zone_id}` | async · Operation |
+
+Помимо CRUD, `InternalCatalogService` домена обслуживает service-to-service обмен каталогом.
+
+:::note Порядок удаления
+Из-за FK `RESTRICT` регион удаляется только после его зон: `InternalRegionService.Delete` при
+наличии зон вернёт `FAILED_PRECONDITION` (внутри `Operation`).
+:::
+
+## Дальше
+
+- Async-модель мутаций — [Operation (LRO)](/infra/operation).
+- Кто потребляет `zoneId`/`regionId` — домены [Compute](/domains/compute), [VPC](/domains/vpc),
+  [Load Balancer](/domains/loadbalancer).
