@@ -1,0 +1,59 @@
+---
+id: errors
+sidebar_position: 3
+title: Ошибки
+---
+
+# Ошибки
+
+Формат и коды ошибок — единые для всех доменов. Тексты сообщений — часть контракта: они стабильны
+и меняются только осознанно.
+
+## Формат
+
+- gRPC: `status.Error(code, message)`.
+- REST (через grpc-gateway): тело `{ "code", "message", "details": [] }` + `google.rpc.Status`.
+
+`google.rpc.Status` — vendored google-тип (`proto/google/rpc/status.proto`), тот же, что несёт
+`Operation.error` для асинхронных ошибок.
+
+## Коды
+
+| Код | Когда |
+|---|---|
+| `INVALID_ARGUMENT` | нарушение формата / валидации поля |
+| `NOT_FOUND` | ресурс корректно запрошен, но не существует |
+| `FAILED_PRECONDITION` | состояние ресурса не позволяет операцию (например, есть зависимые ресурсы) |
+| `ALREADY_EXISTS` | конфликт уникальности (UNIQUE / PK) |
+| `UNAVAILABLE` | peer-сервис недоступен — fail-closed для мутаций |
+| `PERMISSION_DENIED` | authz-Check не прошёл |
+| `INTERNAL` | внутренняя ошибка (фиксированный текст, без утечки SQL / pgx наружу) |
+
+## Тон сообщений
+
+Тексты единообразны между ресурсами. Канонические шаблоны:
+
+- `"<Resource> %s not found"` — например `"Network abc not found"`.
+- `"<field> is immutable after <Resource>.Create"` — попытка сменить immutable-поле.
+- `"invalid <res> id '<X>'"` — малформ идентификатора (см. ниже).
+- Доменные предикаты — стабильные строки, например `"network is not empty"`,
+  `"Subnet CIDRs can not overlap"`.
+
+## Sync vs async ошибки
+
+- **Малформ id** — синхронная ошибка `INVALID_ARGUMENT` **первым стейтментом** RPC (валидация
+  формата до обращения к БД). Для мутаций это значит, что `Operation` даже не создаётся.
+- **Well-formed, но не существует** — `NOT_FOUND` через чтение из репозитория.
+- В **асинхронной** мутации бизнес-ошибка (конфликт состояния, отсутствие peer) приходит
+  **внутри** `Operation`: при `done: true` заполнено поле `error` (`google.rpc.Status`), а не
+  `response`. Синхронно RPC уже вернул квитанцию `Operation`.
+
+:::note Без утечки внутренностей
+`INTERNAL` несёт фиксированный текст. Внутренние ошибки БД (pgx / SQLSTATE) и структура схемы
+никогда не просачиваются в сообщение наружу — это требование безопасности контракта.
+:::
+
+## Дальше
+
+- Как ошибка переносится в async-ответе — [Operation (LRO)](/infra/operation).
+- Ограничения полей, из-за которых возникает `INVALID_ARGUMENT` — [Валидация](/infra/validation).

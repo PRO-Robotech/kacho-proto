@@ -1,0 +1,82 @@
+---
+id: generated-stubs
+sidebar_position: 2
+title: Сгенерированные SDK
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Сгенерированные SDK
+
+Сгенерированный Go-код **коммитится** в репозиторий (`gen/go/…`) и подключается сервисами обычным
+импортом. Локальная кодогенерация обычному потребителю не нужна — только тем, кто меняет `.proto`.
+
+## Раскладка
+
+Каталог `gen/go/` повторяет структуру `proto/` (правило `paths=source_relative`):
+
+<CodeBlock language="text">
+  {dedent`
+    gen/go/kacho/cloud/<domain>/v1/   # стабы домена (vpc, iam, compute, ...)
+    gen/go/kacho/cloud/operation/     # Operation + OperationService
+    gen/go/kacho/cloud/access/        # общие типы access-binding
+    gen/go/kacho/iam/authz/v1/        # authz-опции
+    gen/go/google/...                 # vendored google-типы
+  `}
+</CodeBlock>
+
+## Import-путь
+
+Базовый модуль — `github.com/PRO-Robotech/kacho-proto`. Пакет домена подключается так:
+
+<CodeBlock language="go">
+  {dedent`
+    import (
+        vpcv1       "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/vpc/v1"
+        iamv1       "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/iam/v1"
+        operationv1 "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/operation"
+    )
+  `}
+</CodeBlock>
+
+Алиас пакета задан в `option go_package = "...;<alias>v1"` внутри `.proto` (например
+`vpcv1`, `iamv1`, `operationv1`).
+
+## Что доступно в пакете
+
+Для каждого сервиса сгенерированы:
+
+- **клиент** — `New<Service>Client(conn)` (gRPC-клиент),
+- **серверный интерфейс** — `<Service>Server` + `Register<Service>Server(...)`,
+- **типы сообщений** — request/response и ресурсы,
+- **gateway-регистрация** — `Register<Service>HandlerFromEndpoint(...)` (REST-проекция).
+
+<CodeBlock language="go">
+  {dedent`
+    client := vpcv1.NewNetworkServiceClient(conn)
+    op, err := client.Create(ctx, &vpcv1.CreateNetworkRequest{
+        ProjectId: "prj-...",
+        Name:      "prod",
+    })
+    // op — operationv1.Operation; далее поллинг OperationService.Get(op.Id)
+  `}
+</CodeBlock>
+
+## Подключение в сервисном репозитории
+
+Сервисы Kachō подключают контракт одним из двух способов:
+
+- **Полирепозиторная разработка в одном дереве** — `replace github.com/PRO-Robotech/kacho-proto =>
+  ../kacho-proto` в `go.mod` (собирает против локального рабочего дерева).
+- **Изолированная / релизная сборка** — версия с GitHub (тег semver либо pseudo-version коммита из
+  `main`), без `replace`. Локальный override для разработки при этом выносится в `go.work` (не
+  коммитится).
+
+`kacho-proto` — корень build-графа: он не импортирует ни одного внутреннего пакета, поэтому его
+можно поднять первым в любом сценарии сборки.
+
+## Дальше
+
+- Как перегенерировать стубы при изменении контракта — [Сборка через buf](/build/buf).
+- Пошаговое подключение — [Быстрый старт](/getting-started).

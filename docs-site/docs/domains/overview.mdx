@@ -1,0 +1,57 @@
+---
+id: overview
+sidebar_position: 1
+title: Обзор доменов
+---
+
+# Обзор доменов
+
+Контракт Kachō разбит на доменные пакеты `kacho.cloud.<domain>.v1`. Каждый домен — самостоятельная
+область платформы со своими ресурсами и сервисами; между собой домены общаются по API (никаких
+общих БД или cross-domain FK). Эта страница — карта доменов и указатель по каталогу.
+
+## Карта доменов
+
+<table>
+  <thead><tr><th>Домен</th><th>Пакет</th><th>REST-префикс</th><th>Роль</th></tr></thead>
+  <tbody>
+    <tr><td><a href="/domains/iam"><strong>IAM</strong></a></td><td><code>kacho.cloud.iam.v1</code></td><td><code>/iam/v1</code></td><td>Идентичность и доступ: Account · Project · User · ServiceAccount · Group · Role · AccessBinding + PDP</td></tr>
+    <tr><td><a href="/domains/vpc"><strong>VPC</strong></a></td><td><code>kacho.cloud.vpc.v1</code></td><td><code>/vpc/v1</code></td><td>Сети: Network · Subnet · SecurityGroup · RouteTable · Address · Gateway · NetworkInterface</td></tr>
+    <tr><td><a href="/domains/compute"><strong>Compute</strong></a></td><td><code>kacho.cloud.compute.v1</code></td><td><code>/compute/v1</code></td><td>Вычисления: Instance · Disk · Image · Snapshot · Filesystem · InstanceGroup + placement/host</td></tr>
+    <tr><td><a href="/domains/loadbalancer"><strong>Load Balancer</strong></a></td><td><code>kacho.cloud.loadbalancer.v1</code></td><td><code>/nlb/v1</code></td><td>Балансировка: NetworkLoadBalancer · TargetGroup · Listener</td></tr>
+    <tr><td><a href="/domains/geo"><strong>Geo</strong></a></td><td><code>kacho.cloud.geo.v1</code></td><td><code>/geo/v1</code></td><td>Топология: Region · Zone (источник истины о географии)</td></tr>
+    <tr><td><a href="/domains/registry"><strong>Registry</strong></a></td><td><code>kacho.cloud.registry.v1</code></td><td><code>/registry/v1</code></td><td>OCI-реестр: Registry · Repository · Tag</td></tr>
+  </tbody>
+</table>
+
+## Карта владельцев ресурсов
+
+Каждый тип ресурса принадлежит **ровно одному** домену — он и есть его канонический API. Consumer'ы
+ссылаются по id (TEXT, без FK) и валидируют ссылку через API владельца.
+
+<table>
+  <thead><tr><th>Ресурс</th><th>Владелец</th></tr></thead>
+  <tbody>
+    <tr><td>Region · Zone</td><td>Geo</td></tr>
+    <tr><td>Account · Project · User · ServiceAccount · Group · Role · AccessBinding</td><td>IAM</td></tr>
+    <tr><td>Network · Subnet · SecurityGroup · RouteTable · Address · Gateway · NetworkInterface</td><td>VPC</td></tr>
+    <tr><td>Instance · Disk · Image · Snapshot · Filesystem · InstanceGroup · DiskType · …</td><td>Compute</td></tr>
+    <tr><td>NetworkLoadBalancer · TargetGroup · Listener</td><td>Load Balancer</td></tr>
+    <tr><td>Registry · Repository · Tag</td><td>Registry</td></tr>
+    <tr><td>Operation</td><td>per-service (общий контракт <code>kacho.cloud.operation</code>)</td></tr>
+  </tbody>
+</table>
+
+## Общие правила чтения каталога
+
+- **Публичные vs internal сервисы.** `<Service>` — tenant-поверхность (через api-gateway).
+  `Internal<Service>` — cluster-internal (:9091): admin-CRUD справочников, инфра-данные, hooks и
+  service-to-service обмен. Internal-методы не публикуются на внешний TLS endpoint.
+- **Sync vs async.** `Get`/`List` и специализированные списки — синхронные. Мутации и action-RPC
+  возвращают [`Operation`](/infra/operation) (кроме отдельных internal-CRUD, отдающих ресурс сразу).
+- **REST-пути** в таблицах — это `google.api.http` из `.proto`. gRPC-имя метода указано рядом.
+
+## Дальше
+
+- Общая форма любого ресурса — [Форма ресурса и Operations](/conventions/resource-shape).
+- Выберите домен из карты выше, чтобы увидеть полный список ресурсов и RPC.

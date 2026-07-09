@@ -1,0 +1,89 @@
+---
+id: resource-shape
+sidebar_position: 1
+title: Форма ресурса и Operations
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Форма ресурса и Operations
+
+Эта страница описывает конвенцию, общую для **всех** доменов Kachō: как выглядит любой ресурс и
+любой сервис. Это собственный стиль продукта, зафиксированный в контракте; читать её стоит перед
+любым доменом, потому что дальше она уже не повторяется.
+
+## Плоский ресурс (flat message)
+
+Каждый ресурс — **плоский** message с domain-полями на верхнем уровне. K8s-envelope
+(`spec` / `status` / `metadata` / `resourceVersion` / `generation` / `finalizers`) не
+используется: статус — это enum-поле рядом с остальными, а не вложенная секция.
+
+<CodeBlock language="protobuf">
+  {dedent`
+    message Instance {
+      string id = 1;
+      string project_id = 2;
+      google.protobuf.Timestamp created_at = 3;
+      string name = 4;
+      string description = 5;
+      map<string, string> labels = 6;
+      string zone_id = 7;
+      Status status = 10;        // enum, не вложенный message
+      // ...дальше domain-поля плоско
+    }
+  `}
+</CodeBlock>
+
+Общий костяк почти любого ресурса: `id`, `project_id` (для tenant-ресурсов), `created_at`,
+`name`, `description`, `labels`, `status`. Дальше идут поля конкретного домена.
+
+## Сервис: read — sync, мутации — async
+
+Стандартный набор методов ресурса — пять: два синхронных чтения и три асинхронные мутации.
+
+<CodeBlock language="protobuf">
+  {dedent`
+    service InstanceService {
+      rpc Get(GetInstanceRequest) returns (Instance);                  // sync
+      rpc List(ListInstancesRequest) returns (ListInstancesResponse);  // sync
+      rpc Create(CreateInstanceRequest) returns (operation.Operation); // async
+      rpc Update(UpdateInstanceRequest) returns (operation.Operation); // async
+      rpc Delete(DeleteInstanceRequest) returns (operation.Operation); // async
+    }
+  `}
+</CodeBlock>
+
+- **`Get` / `List`** возвращают ресурс (или страницу ресурсов) **синхронно**.
+- **`Create` / `Update` / `Delete`** возвращают [`Operation`](/infra/operation) — квитанцию
+  долгоживущей операции. Клиент поллит `OperationService.Get(id)` до `done: true`.
+
+Дополнительные действия — отдельные RPC с суффиксом-глаголом в REST-пути (`:verb`): например
+`InstanceService.Start` → `POST /compute/v1/instances/{instance_id}:start`. Такие action-RPC —
+тоже async, возвращают `Operation`.
+
+:::note Watch RPC не существует
+В Kachō нет публичного Watch/stream-подписки на изменения ресурсов. Для in-flight операции
+поллят `OperationService.Get`; для отслеживания состояния — периодический `List` (2–5 c).
+Внутренние stream-контракты между сервисами (`InternalWatchService`,
+`InternalResourceLifecycleService`) — не часть tenant-поверхности.
+:::
+
+## Почему так
+
+<table>
+  <thead><tr><th>Решение</th><th>Зачем</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Плоский message</strong></td><td>Домен-поля читаются напрямую, без разбора envelope; JSON-проекция простая и предсказуемая</td></tr>
+    <tr><td><strong>Status как enum-поле</strong></td><td>Нет дублирования «желаемое vs фактическое»; фактическое состояние — одно поле</td></tr>
+    <tr><td><strong>Мутации → Operation</strong></td><td>Мутация в control-plane почти всегда затрагивает несколько шагов/пиров; async-квитанция честно отражает это и не блокирует клиента</td></tr>
+    <tr><td><strong>Read синхронно</strong></td><td>Чтение — дешёвая операция без побочных эффектов; async здесь только мешал бы</td></tr>
+    <tr><td><strong>:verb для действий</strong></td><td>Нестандартные операции (Start/Stop/AttachDisk/AddRoutes) явно отделены от CRUD и самодокументируемы в REST-пути</td></tr>
+  </tbody>
+</table>
+
+## Дальше
+
+- Как именуются пакеты, поля и REST-пути — [Именование и формат](/conventions/naming).
+- Полный контракт async-модели — [Operation (LRO)](/infra/operation).
+- Дисциплина частичного обновления — [update_mask](/conventions/update-mask).

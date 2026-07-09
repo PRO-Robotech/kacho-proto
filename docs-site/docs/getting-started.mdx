@@ -1,0 +1,119 @@
+---
+id: getting-started
+sidebar_position: 2
+title: Быстрый старт
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Быстрый старт
+
+Эта страница проводит от нуля до подключения контракта: склонировать репозиторий, прогнать
+проверки `buf`, при необходимости перегенерировать стубы и подключить готовый Go-SDK в свой
+сервис. `kacho-proto` — contract-only репозиторий: здесь нет запускаемого сервиса, его продукт —
+это `.proto` и сгенерированный код.
+
+:::info Что нужно
+[`buf`](https://buf.build) (линт и кодогенерация), Go-тулчейн (сборка и подключение SDK) и,
+для регенерации, плагины `protoc-gen-go`, `protoc-gen-go-grpc`, `protoc-gen-grpc-gateway`.
+:::
+
+## 1. Склонировать и осмотреться
+
+<CodeBlock language="bash">
+  {dedent`
+    git clone https://github.com/PRO-Robotech/kacho-proto
+    cd kacho-proto
+
+    # контракты — по доменам
+    ls proto/kacho/cloud        # api  apigateway  compute  geo  iam  loadbalancer  operation  registry  vpc  ...
+
+    # сгенерированные Go-стабы (коммитятся в репозиторий)
+    ls gen/go/kacho/cloud
+  `}
+</CodeBlock>
+
+Раскладка предсказуема: доменные API — в `proto/kacho/cloud/<domain>/v1/`, инфраструктурные
+контракты (`operation`, `validation`, `access`, `apigateway`) — рядом, а vendored google-протоколы
+— в `proto/google/`.
+
+## 2. Проверить контракт — `buf lint` / `buf breaking`
+
+Весь контракт проверяется одной командой на всё дерево (конфигурация — `proto/buf.yaml`):
+
+<CodeBlock language="bash">
+  {dedent`
+    cd proto
+
+    # стилевые правила (STANDARD, с точечными исключениями)
+    buf lint
+
+    # обратная совместимость против main
+    buf breaking --against '.git#branch=main,subdir=proto'
+  `}
+</CodeBlock>
+
+Единый прогон на весь репозиторий — то, ради чего контракты собраны в одном месте: ни один домен
+не может незаметно сломать совместимость. Подробнее о конфигурации — [Сборка через buf](/build/buf).
+
+## 3. Перегенерировать стубы (по необходимости)
+
+Стубы уже закоммичены в `gen/go/`, поэтому обычному потребителю генерация не нужна. Она требуется
+только когда вы **меняете** `.proto`:
+
+<CodeBlock language="bash">
+  {dedent`
+    cd proto
+    buf generate            # → ../gen/go по правилам buf.gen.yaml
+    cd ..
+    go build ./...          # убедиться, что сгенерированный код собирается
+  `}
+</CodeBlock>
+
+`buf.gen.yaml` запускает три плагина: `protoc-gen-go` (сообщения), `protoc-gen-go-grpc`
+(gRPC-сервисы, `require_unimplemented_servers=true`) и `protoc-gen-grpc-gateway`
+(REST-проекция, `generate_unbound_methods=true`).
+
+## 4. Подключить SDK в Go-сервис
+
+Импортируйте сгенерированный пакет нужного домена — путь строится как
+`.../gen/go/kacho/cloud/<domain>/v1`:
+
+<CodeBlock language="go">
+  {dedent`
+    import (
+        vpcv1 "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/vpc/v1"
+        operationv1 "github.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/operation"
+    )
+
+    // gRPC-клиент домена VPC
+    client := vpcv1.NewNetworkServiceClient(conn)
+
+    // Create — асинхронная мутация: возвращает Operation
+    op, err := client.Create(ctx, &vpcv1.CreateNetworkRequest{
+        ProjectId: "prj-...",
+        Name:      "prod",
+    })
+    // далее поллинг OperationService.Get(op.Id) до op.Done == true
+  `}
+</CodeBlock>
+
+В сервисных репозиториях зависимость подключается через `replace github.com/PRO-Robotech/kacho-proto
+=> ../kacho-proto` (полирепозиторная разработка в одном дереве) либо через версию с GitHub. Детали
+раскладки пакетов — [Сгенерированные SDK](/build/generated-stubs).
+
+## 5. Сгенерировать REST-документацию поведения
+
+REST-путь каждого RPC задан аннотацией `google.api.http` прямо в `.proto`. Например,
+`NetworkService.Create` проецируется в `POST /vpc/v1/networks`, а `Get` — в
+`GET /vpc/v1/networks/{network_id}`. Полные таблицы путей — на страницах доменов
+([VPC](/domains/vpc), [IAM](/domains/iam) и т.д.).
+
+## Дальше
+
+- Как устроен **любой** ресурс и сервис Kachō — [Форма ресурса и Operations](/conventions/resource-shape).
+- Naming, JSON-формат, REST-пути — [Именование и формат](/conventions/naming).
+- Единый формат ошибок и коды — [Ошибки](/conventions/errors).
+- Каталог доменов с полным списком RPC — [Обзор доменов](/domains/overview).
+- Async-модель (LRO) — [Operation (LRO)](/infra/operation).

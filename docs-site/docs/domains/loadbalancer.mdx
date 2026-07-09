@@ -1,0 +1,88 @@
+---
+id: loadbalancer
+sidebar_position: 5
+title: Load Balancer
+---
+
+# Домен Load Balancer
+
+**Load Balancer** распределяет входящий трафик по группе бэкендов. Домен закрывает задачу «один
+стабильный адрес на сервис, за которым — меняющийся набор инстансов»: NetworkLoadBalancer держит
+VIP и слушателей, TargetGroup описывает набор бэкендов и их health-check, Listener связывает
+порт/протокол на балансировщике с целевой группой.
+
+Пакет — `kacho.cloud.loadbalancer.v1`, REST-префикс — `/nlb/v1`.
+
+## Ресурсы
+
+<table>
+  <thead><tr><th>Ресурс</th><th>Ключевые поля</th></tr></thead>
+  <tbody>
+    <tr><td><strong>NetworkLoadBalancer</strong></td><td><code>id</code> · <code>projectId</code> · <code>name</code> · <code>regionId</code> · <code>status</code> · <code>type</code> · <code>sessionAffinity</code> · <code>placementType</code> · <code>v4AddressId</code>/<code>v6AddressId</code> · <code>vipSource</code> (oneof) · <code>attachedTargetGroups</code></td></tr>
+    <tr><td><strong>TargetGroup</strong></td><td><code>id</code> · <code>projectId</code> · <code>name</code> · <code>regionId</code> · <code>targets</code> · <code>healthCheck</code> · <code>status</code></td></tr>
+    <tr><td><strong>Listener</strong></td><td><code>id</code> · <code>projectId</code> · <code>loadBalancerId</code> · <code>protocol</code> · <code>port</code> · <code>targetPort</code> · <code>proxyProtocolV2</code> · <code>defaultTargetGroupId</code> · <code>status</code></td></tr>
+  </tbody>
+</table>
+
+`regionId` валидируется через домен [Geo](/domains/geo); Instance-таргеты резолвятся через
+[Compute](/domains/compute). `port` / `target_port` лежат в диапазоне `[1, 65535]`.
+
+## NetworkLoadBalancerService
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` | `GET /nlb/v1/networkLoadBalancers/{network_load_balancer_id}` | sync |
+| `List` | `GET /nlb/v1/networkLoadBalancers` | sync |
+| `Create` | `POST /nlb/v1/networkLoadBalancers` | async |
+| `Update` | `PATCH /nlb/v1/networkLoadBalancers/{network_load_balancer_id}` | async |
+| `Delete` | `DELETE /nlb/v1/networkLoadBalancers/{network_load_balancer_id}` | async |
+| `Start` | `POST /nlb/v1/networkLoadBalancers/{network_load_balancer_id}:start` | async |
+| `Stop` | `POST /nlb/v1/networkLoadBalancers/{network_load_balancer_id}:stop` | async |
+| `Move` | `POST /nlb/v1/networkLoadBalancers/{network_load_balancer_id}:move` | async |
+| `AttachTargetGroup` | `POST /nlb/v1/networkLoadBalancers/{network_load_balancer_id}:attachTargetGroup` | async |
+| `DetachTargetGroup` | `POST /nlb/v1/networkLoadBalancers/{network_load_balancer_id}:detachTargetGroup` | async |
+| `GetTargetStates` | `GET /nlb/v1/networkLoadBalancers/{network_load_balancer_id}/targetStates` | sync |
+| `ListOperations` | `GET /nlb/v1/networkLoadBalancers/{network_load_balancer_id}/operations` | sync |
+
+:::note Парные attach/detach — разная форма запроса
+`AttachNetworkLoadBalancerTargetGroupRequest` несёт **вложенный** `attached_target_group { target_group_id }`,
+а `DetachNetworkLoadBalancerTargetGroupRequest` — **плоский** `target_group_id`. Форму каждого
+запроса сверяйте по `.proto`, а не по симметрии имён.
+:::
+
+## TargetGroupService
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` | `GET /nlb/v1/targetGroups/{target_group_id}` | sync |
+| `List` | `GET /nlb/v1/targetGroups` | sync |
+| `Create` | `POST /nlb/v1/targetGroups` | async |
+| `Update` | `PATCH /nlb/v1/targetGroups/{target_group_id}` | async |
+| `Delete` | `DELETE /nlb/v1/targetGroups/{target_group_id}` | async |
+| `Move` | `POST /nlb/v1/targetGroups/{target_group_id}:move` | async |
+| `AddTargets` | `POST /nlb/v1/targetGroups/{target_group_id}:addTargets` | async |
+| `RemoveTargets` | `POST /nlb/v1/targetGroups/{target_group_id}:removeTargets` | async |
+| `ListOperations` | `GET /nlb/v1/targetGroups/{target_group_id}/operations` | sync |
+
+## ListenerService
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` | `GET /nlb/v1/listeners/{listener_id}` | sync |
+| `List` | `GET /nlb/v1/listeners` | sync |
+| `Create` | `POST /nlb/v1/listeners` | async |
+| `Update` | `PATCH /nlb/v1/listeners/{listener_id}` | async |
+| `Delete` | `DELETE /nlb/v1/listeners/{listener_id}` | async |
+| `ListOperations` | `GET /nlb/v1/listeners/{listener_id}/operations` | sync |
+
+## Internal-сервисы (:9091)
+
+| Сервис | RPC | Назначение |
+|---|---|---|
+| `InternalLoadBalancerAnnounceService` | `GetAnnounceState` · `ReportAnnounceState` | Состояние анонса VIP (data-plane обмен) |
+| `InternalResourceLifecycleService` | `Subscribe` (stream) | Поток lifecycle-событий ресурсов для операторов |
+
+## Дальше
+
+- Async-модель и action-RPC — [Operation (LRO)](/infra/operation).
+- Валидация `regionId` — [Geo](/domains/geo); резолв Instance-таргетов — [Compute](/domains/compute).

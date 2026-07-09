@@ -1,0 +1,52 @@
+---
+id: update-mask
+sidebar_position: 5
+title: update_mask
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# update_mask
+
+Частичное обновление устроено одинаково во всех доменах: `Update`-запрос несёт
+`google.protobuf.FieldMask update_mask`, и его обработка подчинена единой дисциплине. Паритет по
+форме между ресурсами обязателен.
+
+## Правила
+
+<table>
+  <thead><tr><th>Что в маске</th><th>Поведение</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Unknown-поле</strong></td><td><code>INVALID_ARGUMENT</code> — маска проверяется против known-set полей ресурса</td></tr>
+    <tr><td><strong>Hard-immutable поле</strong></td><td><code>INVALID_ARGUMENT</code> · <code>"&lt;field&gt; is immutable after &lt;Resource&gt;.Create"</code></td></tr>
+    <tr><td><strong>Маска пуста</strong></td><td>full-object PATCH: применяются все mutable-поля тела; immutable из тела молча игнорируются</td></tr>
+    <tr><td><strong>Mutable-поле</strong></td><td>применяется; валидируется теми же правилами, что при <code>Create</code></td></tr>
+  </tbody>
+</table>
+
+## Пример
+
+<CodeBlock language="bash">
+  {dedent`
+    # обновить только name; остальные поля не трогаются
+    curl -X PATCH '.../vpc/v1/networks/net-abc?updateMask=name' \\
+      -H 'Content-Type: application/json' \\
+      -d '{ "name": "prod-renamed" }'
+  `}
+</CodeBlock>
+
+Через REST маска задаётся query-параметром `updateMask` (grpc-gateway транслирует его в
+`google.protobuf.FieldMask`). Значения маски — имена полей ресурса.
+
+## Почему единообразно
+
+`update_mask` даёт клиенту точный контроль над тем, какие поля меняются, и защищает immutable-поля
+(например `id`, `project_id`, `zone_id` у ряда ресурсов) от случайной перезаписи. Поскольку
+правило одно на все домены, клиент один раз выучивает семантику и полагается на неё везде.
+
+## Дальше
+
+- Что считается mutable/immutable у конкретного ресурса — страницы доменов ([VPC](/domains/vpc),
+  [IAM](/domains/iam), …).
+- Ошибки валидации — [Ошибки](/conventions/errors).

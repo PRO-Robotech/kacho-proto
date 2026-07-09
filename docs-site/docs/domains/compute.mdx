@@ -1,0 +1,121 @@
+---
+id: compute
+sidebar_position: 4
+title: Compute
+---
+
+# Домен Compute
+
+**Compute** — вычислительный домен: виртуальные машины и всё, что к ним относится. Он закрывает
+задачу «запустить и обслуживать нагрузку»: Instance — виртуальная машина, Disk / Snapshot / Image /
+Filesystem — хранилище и его образы, InstanceGroup — управляемая группа однотипных инстансов, а
+семейство placement/host-ресурсов задаёт, как нагрузка раскладывается по инфраструктуре.
+
+Пакет — `kacho.cloud.compute.v1`, REST-префикс — `/compute/v1`.
+
+## Ресурсы
+
+<table>
+  <thead><tr><th>Ресурс</th><th>Назначение</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Instance</strong></td><td>Виртуальная машина: <code>id</code> · <code>projectId</code> · <code>zoneId</code> · <code>status</code> · диски/интерфейсы/ресурсы</td></tr>
+    <tr><td><strong>Disk</strong></td><td>Блочный диск (загрузочный/дополнительный)</td></tr>
+    <tr><td><strong>Image</strong></td><td>Образ для создания дисков (с семействами — <code>GetLatestByFamily</code>)</td></tr>
+    <tr><td><strong>Snapshot</strong></td><td>Снимок диска</td></tr>
+    <tr><td><strong>Filesystem</strong></td><td>Сетевая файловая система, подключаемая к инстансам</td></tr>
+    <tr><td><strong>InstanceGroup</strong></td><td>Управляемая группа инстансов (rolling-операции, зоны, процессы)</td></tr>
+    <tr><td><strong>SnapshotSchedule</strong></td><td>Расписание автоснимков дисков</td></tr>
+    <tr><td><strong>PlacementGroup · DiskPlacementGroup · HostGroup · GpuCluster · ReservedInstancePool</strong></td><td>Управление размещением и ёмкостью</td></tr>
+    <tr><td><strong>DiskType · HostType</strong></td><td>Справочники (read-only)</td></tr>
+  </tbody>
+</table>
+
+`zoneId` инстанса валидируется через [Geo](/domains/geo); NIC-спецификация и IPAM — через
+[VPC](/domains/vpc).
+
+:::note Access-binding на ресурсах
+Большинство сервисов Compute несут триаду `ListAccessBindings` (sync) / `SetAccessBindings` /
+`UpdateAccessBindings` (async) — управление доступом к конкретному ресурсу через общие типы
+`kacho.cloud.access` (см. [Авторизация](/infra/authz)). REST-пути:
+`:listAccessBindings` / `:setAccessBindings` / `:updateAccessBindings`.
+:::
+
+## InstanceService
+
+CRUD плюс богатый набор action-RPC жизненного цикла и подключения ресурсов.
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` · `List` | `GET /compute/v1/instances/{instance_id}` · `GET /compute/v1/instances` | sync |
+| `Create` · `Update` · `Delete` | `POST /compute/v1/instances` · `PATCH`/`DELETE .../{instance_id}` | async |
+| `Start` · `Stop` · `Restart` | `POST .../{instance_id}:start` · `:stop` · `:restart` | async |
+| `UpdateMetadata` | `POST /compute/v1/instances/{instance_id}/updateMetadata` | async |
+| `GetSerialPortOutput` | `GET /compute/v1/instances/{instance_id}:serialPortOutput` | sync |
+| `AttachDisk` · `DetachDisk` | `POST .../{instance_id}:attachDisk` · `:detachDisk` | async |
+| `AttachFilesystem` · `DetachFilesystem` | `POST .../{instance_id}:attachFilesystem` · `:detachFilesystem` | async |
+| `AttachNetworkInterface` · `DetachNetworkInterface` | `POST .../{instance_id}:attachNetworkInterface` · `:detachNetworkInterface` | async |
+| `UpdateNetworkInterface` | `PATCH /compute/v1/instances/{instance_id}/updateNetworkInterface` | async |
+| `AddOneToOneNat` · `RemoveOneToOneNat` | `POST .../{instance_id}/addOneToOneNat` · `/removeOneToOneNat` | async |
+| `Relocate` | `POST /compute/v1/instances/{instance_id}:relocate` | async |
+| `SimulateMaintenanceEvent` | `POST /compute/v1/instances/{instance_id}:simulateMaintenanceEvent` | async |
+| `ListOperations` | `GET /compute/v1/instances/{instance_id}/operations` | sync |
+| `ListAccessBindings` · `SetAccessBindings` · `UpdateAccessBindings` | `:listAccessBindings` · `:setAccessBindings` · `:updateAccessBindings` | sync / async |
+
+## DiskService
+
+| RPC | REST | Тип |
+|---|---|---|
+| `Get` · `List` | `GET /compute/v1/disks/{disk_id}` · `GET /compute/v1/disks` | sync |
+| `Create` · `Update` · `Delete` | `POST /compute/v1/disks` · `PATCH`/`DELETE .../{disk_id}` | async |
+| `Relocate` | `POST /compute/v1/disks/{disk_id}:relocate` | async |
+| `ListSnapshotSchedules` | gRPC (unbound) | sync |
+| `ListOperations` | `GET /compute/v1/disks/{disk_id}/operations` | sync |
+| `ListAccessBindings` · `SetAccessBindings` · `UpdateAccessBindings` | `:listAccessBindings` · `:setAccessBindings` · `:updateAccessBindings` | sync / async |
+
+## ImageService · SnapshotService · FilesystemService
+
+Стандартный CRUD (`Get`/`List` sync, `Create`/`Update`/`Delete` async) + `ListOperations` +
+access-binding триада. Дополнительно `ImageService.GetLatestByFamily`
+(`GET /compute/v1/images:latestByFamily`, sync).
+
+## InstanceGroupService
+
+Управляемая группа инстансов — самый богатый набор операций домена: помимо CRUD —
+`CreateFromYaml` / `UpdateFromYaml`, `Start` / `Stop`, `RollingRestart` / `RollingRecreate`,
+`ListInstances`, `DeleteInstances` / `StopInstances`, `ResumeProcesses` / `PauseProcesses`,
+`DisableZones` / `EnableZones`, `ListLogRecords`, `ListOperations` + access-binding триада.
+YAML-варианты доступны через `/compute/v1/instanceGroups:yaml` и `.../{id}:yaml`.
+
+## Группировка и ёмкость
+
+| Сервис | Заметные RPC сверх CRUD |
+|---|---|
+| `PlacementGroupService` | `ListInstances` |
+| `DiskPlacementGroupService` | `ListDisks` |
+| `HostGroupService` | `ListHosts` · `ListInstances` · `UpdateHost` |
+| `GpuClusterService` | `ListInstances` |
+| `ReservedInstancePoolService` | `ListInstances` |
+| `SnapshotScheduleService` | `UpdateDisks` · `Enable` · `Disable` · `ListSnapshots` · `ListDisks` |
+
+Все — с CRUD-костяком, `ListOperations` и access-binding триадой (у read-каталогов — только
+`Get`/`List`).
+
+## Справочники и обслуживание
+
+- **DiskTypeService · HostTypeService** — read-only каталоги (`Get` / `List`, sync).
+- **MaintenanceService** — `List` / `Get` (sync) плановых обслуживаний +
+  `Reschedule` (`POST /compute/v1/maintenances/{maintenance_id}:reschedule`, async).
+
+## Internal-сервисы (:9091)
+
+| Сервис | Назначение |
+|---|---|
+| `InternalDiskTypeService` | Admin-CRUD справочника DiskType (возвращает ресурс синхронно) |
+| `InternalCatalogService` | Service-to-service обмен каталогом |
+| `InternalResourceLifecycleService` · `InternalWatchService` | Потоки lifecycle-событий (`Subscribe` / `Watch`) для операторов |
+
+## Дальше
+
+- Async-модель и action-RPC — [Operation (LRO)](/infra/operation).
+- Валидация `zoneId` — [Geo](/domains/geo); NIC/IPAM — [VPC](/domains/vpc); доступ к ресурсам —
+  [Авторизация](/infra/authz).
