@@ -156,6 +156,22 @@ message Instance {
 
   // Instance application settings.
   Application application = 33;
+
+  // OCI image reference the instance's OS is delivered from (kacho-registry).
+  // INPUT: set at create time; the rootfs is ephemeral and the OS is delivered
+  // from this image. See the compute→storage cutover (persistent state lives on
+  // attached storage Volumes, not on the boot disk).
+  string image = 34;
+
+  // Resolved, immutable content digest that `image` was pinned to at create time.
+  // OUTPUT-only: filled by the server (registry-resolve), never accepted on input.
+  string image_digest = 35;
+
+  // Guaranteed CPU baseline per vCPU, in percent.
+  //   0        = best-effort / burstable (no guarantee);
+  //   1..100   = guaranteed percentage (CHECK 0..100; per-platform set).
+  // Sizing is mutable only while the instance is STOPPED.
+  int32 cpu_guarantee_percent = 36;
 }
 
 message Resources {
@@ -196,8 +212,10 @@ message AttachedDisk {
   // Specifies whether the disk will be auto-deleted when the instance is deleted.
   bool auto_delete = 3;
 
-  // ID of the disk that is attached to the instance.
-  string disk_id = 4;
+  // ID of the storage Volume (`kacho.cloud.storage.v1.Volume`, prefix "vol") that
+  // is attached to the instance. Cross-service reference (no FK); source of truth
+  // is the storage `volume_attachments` row.
+  string volume_id = 4;
 }
 
 message AttachedLocalDisk {
