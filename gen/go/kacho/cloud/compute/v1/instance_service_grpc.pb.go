@@ -95,17 +95,17 @@ type InstanceServiceClient interface {
 	AttachFilesystem(ctx context.Context, in *AttachInstanceFilesystemRequest, opts ...grpc.CallOption) (*operation.Operation, error)
 	// Detaches the filesystem from the instance.
 	DetachFilesystem(ctx context.Context, in *DetachInstanceFilesystemRequest, opts ...grpc.CallOption) (*operation.Operation, error)
-	// Attaches the network-interface to the instance.
+	// Attaches an existing kacho-vpc NetworkInterface (NIC) to the instance by id.
 	//
-	// To attach a network-interface, the instance must have a `STOPPED` status ([Instance.status]).
-	// To check the instance status, make a [InstanceService.Get] request.
-	// To stop the running instance, make a [InstanceService.Stop] request.
+	// The NIC is a first-class kacho-vpc resource; this RPC binds it to the instance
+	// (multiple NICs per instance are allowed). The instance must be `RUNNING` or
+	// `STOPPED` ([Instance.status]). kacho-vpc owns the binding and enforces
+	// zone-coherence (anycast/REGIONAL subnets excepted).
 	AttachNetworkInterface(ctx context.Context, in *AttachInstanceNetworkInterfaceRequest, opts ...grpc.CallOption) (*operation.Operation, error)
-	// Detaches the network-interface to the instance.
+	// Detaches a network interface (NIC) from the instance, by nic_id or slot index.
 	//
-	// To Detach a network-interface, the instance must have a `STOPPED` status ([Instance.status]).
-	// To check the instance status, make a [InstanceService.Get] request.
-	// To stop the running instance, make a [InstanceService.Stop] request.
+	// The instance must be `RUNNING` or `STOPPED` ([Instance.status]). The NIC itself
+	// (a kacho-vpc resource) is not deleted; only the binding is released.
 	DetachNetworkInterface(ctx context.Context, in *DetachInstanceNetworkInterfaceRequest, opts ...grpc.CallOption) (*operation.Operation, error)
 	// Enables One-to-one NAT on the network interface.
 	AddOneToOneNat(ctx context.Context, in *AddInstanceOneToOneNatRequest, opts ...grpc.CallOption) (*operation.Operation, error)
@@ -430,17 +430,17 @@ type InstanceServiceServer interface {
 	AttachFilesystem(context.Context, *AttachInstanceFilesystemRequest) (*operation.Operation, error)
 	// Detaches the filesystem from the instance.
 	DetachFilesystem(context.Context, *DetachInstanceFilesystemRequest) (*operation.Operation, error)
-	// Attaches the network-interface to the instance.
+	// Attaches an existing kacho-vpc NetworkInterface (NIC) to the instance by id.
 	//
-	// To attach a network-interface, the instance must have a `STOPPED` status ([Instance.status]).
-	// To check the instance status, make a [InstanceService.Get] request.
-	// To stop the running instance, make a [InstanceService.Stop] request.
+	// The NIC is a first-class kacho-vpc resource; this RPC binds it to the instance
+	// (multiple NICs per instance are allowed). The instance must be `RUNNING` or
+	// `STOPPED` ([Instance.status]). kacho-vpc owns the binding and enforces
+	// zone-coherence (anycast/REGIONAL subnets excepted).
 	AttachNetworkInterface(context.Context, *AttachInstanceNetworkInterfaceRequest) (*operation.Operation, error)
-	// Detaches the network-interface to the instance.
+	// Detaches a network interface (NIC) from the instance, by nic_id or slot index.
 	//
-	// To Detach a network-interface, the instance must have a `STOPPED` status ([Instance.status]).
-	// To check the instance status, make a [InstanceService.Get] request.
-	// To stop the running instance, make a [InstanceService.Stop] request.
+	// The instance must be `RUNNING` or `STOPPED` ([Instance.status]). The NIC itself
+	// (a kacho-vpc resource) is not deleted; only the binding is released.
 	DetachNetworkInterface(context.Context, *DetachInstanceNetworkInterfaceRequest) (*operation.Operation, error)
 	// Enables One-to-one NAT on the network interface.
 	AddOneToOneNat(context.Context, *AddInstanceOneToOneNatRequest) (*operation.Operation, error)

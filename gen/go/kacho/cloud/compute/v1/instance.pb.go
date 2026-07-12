@@ -538,9 +538,24 @@ type Instance struct {
 	// ID of the reserved instance pool that the instance belongs to.
 	ReservedInstancePoolId string `protobuf:"bytes,32,opt,name=reserved_instance_pool_id,json=reservedInstancePoolId,proto3" json:"reserved_instance_pool_id,omitempty"`
 	// Instance application settings.
-	Application   *Application `protobuf:"bytes,33,opt,name=application,proto3" json:"application,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Application *Application `protobuf:"bytes,33,opt,name=application,proto3" json:"application,omitempty"`
+	// OCI image reference the instance's OS is delivered from (kacho-registry).
+	// INPUT: set at create time; the rootfs is ephemeral and the OS is delivered
+	// from this image. See the compute→storage cutover (persistent state lives on
+	// attached storage Volumes, not on the boot disk).
+	Image string `protobuf:"bytes,34,opt,name=image,proto3" json:"image,omitempty"`
+	// Resolved, immutable content digest that `image` was pinned to at create time.
+	// OUTPUT-only: filled by the server (registry-resolve), never accepted on input.
+	ImageDigest string `protobuf:"bytes,35,opt,name=image_digest,json=imageDigest,proto3" json:"image_digest,omitempty"`
+	// Guaranteed CPU baseline per vCPU, in percent.
+	//
+	//	0        = best-effort / burstable (no guarantee);
+	//	1..100   = guaranteed percentage (CHECK 0..100; per-platform set).
+	//
+	// Sizing is mutable only while the instance is STOPPED.
+	CpuGuaranteePercent int32 `protobuf:"varint,36,opt,name=cpu_guarantee_percent,json=cpuGuaranteePercent,proto3" json:"cpu_guarantee_percent,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *Instance) Reset() {
@@ -776,6 +791,27 @@ func (x *Instance) GetApplication() *Application {
 	return nil
 }
 
+func (x *Instance) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+func (x *Instance) GetImageDigest() string {
+	if x != nil {
+		return x.ImageDigest
+	}
+	return ""
+}
+
+func (x *Instance) GetCpuGuaranteePercent() int32 {
+	if x != nil {
+		return x.CpuGuaranteePercent
+	}
+	return 0
+}
+
 type Resources struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The amount of memory available to the instance, specified in bytes.
@@ -860,8 +896,10 @@ type AttachedDisk struct {
 	DeviceName string `protobuf:"bytes,2,opt,name=device_name,json=deviceName,proto3" json:"device_name,omitempty"`
 	// Specifies whether the disk will be auto-deleted when the instance is deleted.
 	AutoDelete bool `protobuf:"varint,3,opt,name=auto_delete,json=autoDelete,proto3" json:"auto_delete,omitempty"`
-	// ID of the disk that is attached to the instance.
-	DiskId        string `protobuf:"bytes,4,opt,name=disk_id,json=diskId,proto3" json:"disk_id,omitempty"`
+	// ID of the storage Volume (`kacho.cloud.storage.v1.Volume`, prefix "vol") that
+	// is attached to the instance. Cross-service reference (no FK); source of truth
+	// is the storage `volume_attachments` row.
+	VolumeId      string `protobuf:"bytes,4,opt,name=volume_id,json=volumeId,proto3" json:"volume_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -917,9 +955,9 @@ func (x *AttachedDisk) GetAutoDelete() bool {
 	return false
 }
 
-func (x *AttachedDisk) GetDiskId() string {
+func (x *AttachedDisk) GetVolumeId() string {
 	if x != nil {
-		return x.DiskId
+		return x.VolumeId
 	}
 	return ""
 }
@@ -1825,7 +1863,7 @@ var File_kacho_cloud_compute_v1_instance_proto protoreflect.FileDescriptor
 
 const file_kacho_cloud_compute_v1_instance_proto_rawDesc = "" +
 	"\n" +
-	"%kacho/cloud/compute/v1/instance.proto\x12\x16kacho.cloud.compute.v1\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a kacho/cloud/compute/v1/kek.proto\x1a(kacho/cloud/compute/v1/application.proto\x1a0kacho/cloud/compute/v1/hardware_generation.proto\x1a(kacho/cloud/compute/v1/maintenance.proto\"\x9d\x11\n" +
+	"%kacho/cloud/compute/v1/instance.proto\x12\x16kacho.cloud.compute.v1\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a kacho/cloud/compute/v1/kek.proto\x1a(kacho/cloud/compute/v1/application.proto\x1a0kacho/cloud/compute/v1/hardware_generation.proto\x1a(kacho/cloud/compute/v1/maintenance.proto\"\x8a\x12\n" +
 	"\bInstance\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -1860,7 +1898,10 @@ const file_kacho_cloud_compute_v1_instance_proto_rawDesc = "" +
 	"\x18maintenance_grace_period\x18\x1e \x01(\v2\x19.google.protobuf.DurationR\x16maintenanceGracePeriod\x12[\n" +
 	"\x13hardware_generation\x18\x1f \x01(\v2*.kacho.cloud.compute.v1.HardwareGenerationR\x12hardwareGeneration\x129\n" +
 	"\x19reserved_instance_pool_id\x18  \x01(\tR\x16reservedInstancePoolId\x12E\n" +
-	"\vapplication\x18! \x01(\v2#.kacho.cloud.compute.v1.ApplicationR\vapplication\x1a9\n" +
+	"\vapplication\x18! \x01(\v2#.kacho.cloud.compute.v1.ApplicationR\vapplication\x12\x14\n" +
+	"\x05image\x18\" \x01(\tR\x05image\x12!\n" +
+	"\fimage_digest\x18# \x01(\tR\vimageDigest\x122\n" +
+	"\x15cpu_guarantee_percent\x18$ \x01(\x05R\x13cpuGuaranteePercent\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a;\n" +
@@ -1885,14 +1926,14 @@ const file_kacho_cloud_compute_v1_instance_proto_rawDesc = "" +
 	"\x06memory\x18\x01 \x01(\x03R\x06memory\x12\x14\n" +
 	"\x05cores\x18\x02 \x01(\x03R\x05cores\x12#\n" +
 	"\rcore_fraction\x18\x03 \x01(\x03R\fcoreFraction\x12\x12\n" +
-	"\x04gpus\x18\x04 \x01(\x03R\x04gpus\"\xe5\x01\n" +
+	"\x04gpus\x18\x04 \x01(\x03R\x04gpus\"\xe9\x01\n" +
 	"\fAttachedDisk\x12=\n" +
 	"\x04mode\x18\x01 \x01(\x0e2).kacho.cloud.compute.v1.AttachedDisk.ModeR\x04mode\x12\x1f\n" +
 	"\vdevice_name\x18\x02 \x01(\tR\n" +
 	"deviceName\x12\x1f\n" +
 	"\vauto_delete\x18\x03 \x01(\bR\n" +
-	"autoDelete\x12\x17\n" +
-	"\adisk_id\x18\x04 \x01(\tR\x06diskId\";\n" +
+	"autoDelete\x12\x1b\n" +
+	"\tvolume_id\x18\x04 \x01(\tR\bvolumeId\";\n" +
 	"\x04Mode\x12\x14\n" +
 	"\x10MODE_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tREAD_ONLY\x10\x01\x12\x0e\n" +

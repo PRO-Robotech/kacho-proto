@@ -265,11 +265,12 @@ service InstanceService {
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
-  // Attaches the network-interface to the instance.
+  // Attaches an existing kacho-vpc NetworkInterface (NIC) to the instance by id.
   //
-  // To attach a network-interface, the instance must have a `STOPPED` status ([Instance.status]).
-  // To check the instance status, make a [InstanceService.Get] request.
-  // To stop the running instance, make a [InstanceService.Stop] request.
+  // The NIC is a first-class kacho-vpc resource; this RPC binds it to the instance
+  // (multiple NICs per instance are allowed). The instance must be `RUNNING` or
+  // `STOPPED` ([Instance.status]). kacho-vpc owns the binding and enforces
+  // zone-coherence (anycast/REGIONAL subnets excepted).
   rpc AttachNetworkInterface(AttachInstanceNetworkInterfaceRequest) returns (operation.Operation) {
     option (google.api.http) = {
       post: "/compute/v1/instances/{instance_id}:attachNetworkInterface"
@@ -288,11 +289,10 @@ service InstanceService {
     option (kacho.iam.authz.v1.required_acr_min)  = "2";
   }
 
-  // Detaches the network-interface to the instance.
+  // Detaches a network interface (NIC) from the instance, by nic_id or slot index.
   //
-  // To Detach a network-interface, the instance must have a `STOPPED` status ([Instance.status]).
-  // To check the instance status, make a [InstanceService.Get] request.
-  // To stop the running instance, make a [InstanceService.Stop] request.
+  // The instance must be `RUNNING` or `STOPPED` ([Instance.status]). The NIC itself
+  // (a kacho-vpc resource) is not deleted; only the binding is released.
   rpc DetachNetworkInterface(DetachInstanceNetworkInterfaceRequest) returns (operation.Operation) {
     option (google.api.http) = {
       post: "/compute/v1/instances/{instance_id}:detachNetworkInterface"
@@ -665,6 +665,14 @@ message CreateInstanceRequest {
 
   // Instance application settings.
   Application application = 25;
+
+  // OCI image reference (kacho-registry) the instance's OS is delivered from.
+  // INPUT: the rootfs is ephemeral and the OS is delivered from this image at
+  // create time. The server resolves it to an immutable content digest, surfaced
+  // output-only as [kacho.cloud.compute.v1.Instance.image_digest]. Populates the
+  // output [kacho.cloud.compute.v1.Instance.image]. See the compute→storage
+  // cutover (persistent state lives on attached storage Volumes).
+  string image = 26 [(length) = "<=256"];
 }
 
 message CreateInstanceMetadata {
@@ -757,6 +765,13 @@ message UpdateInstanceRequest {
 
   // Instance application settings.
   Application application = 18;
+
+  // OCI image reference (kacho-registry) the instance's OS is delivered from.
+  // Re-pins the OS image; the server re-resolves the immutable content digest
+  // surfaced output-only as [kacho.cloud.compute.v1.Instance.image_digest].
+  // Applied per update_mask discipline (member of the mask known-set); a re-pin
+  // is server-enforced to be admissible only while the instance is STOPPED.
+  string image = 19 [(length) = "<=256"];
 }
 
 message UpdateInstanceMetadata {
@@ -869,8 +884,8 @@ message AttachInstanceDiskMetadata {
   // ID of the instance.
   string instance_id = 1;
 
-  // ID of the disk.
-  string disk_id = 2;
+  // ID of the storage Volume (prefix "vol").
+  string volume_id = 2;
 }
 
 message DetachInstanceDiskRequest {
@@ -884,8 +899,8 @@ message DetachInstanceDiskRequest {
   oneof disk {
     option (exactly_one) = true;
 
-    // ID of the disk that should be detached.
-    string disk_id = 2 [(length) = "<=50"];
+    // ID of the storage Volume (prefix "vol") that should be detached.
+    string volume_id = 2 [(length) = "<=50"];
 
     // Serial number of the disk that should be detached. This value is reflected into the /dev/disk/by-id/ tree
     // of a Linux operating system running within the instance.
@@ -897,8 +912,8 @@ message DetachInstanceDiskMetadata {
   // ID of the instance.
   string instance_id = 1;
 
-  // ID of the disk.
-  string disk_id = 2;
+  // ID of the storage Volume (prefix "vol").
+  string volume_id = 2;
 }
 
 message AttachInstanceFilesystemRequest {
@@ -950,45 +965,79 @@ message DetachInstanceFilesystemMetadata {
   string filesystem_id = 2;
 }
 
+// AttachedNicSpec — NIC-reference attach spec: attaches an *existing* kacho-vpc
+// NetworkInterface (NIC) to the instance by id. The NIC is a first-class VPC
+// resource (source of truth = kacho-vpc); the instance only references and mirrors
+// it. Re-enables the explicit NIC↔Instance binding deferred in KAC-266.
+message AttachedNicSpec {
+  // ID of an existing kacho-vpc NetworkInterface (NIC, prefix "enp") to attach.
+  string nic_id = 1 [
+    (required) = true,
+    (length) = "<=50"
+  ];
+
+  // Slot index on the instance (eth0=0, eth1=1, …), unique within the instance.
+  // Optional: if unset, the server assigns the first free slot atomically.
+  int32 index = 2;
+}
+
 message AttachInstanceNetworkInterfaceRequest {
-  // ID of the instance that in which network interface is being attached to.
-  string instance_id = 1 [(required) = true];
+  // Old subnet-spec attach form (created a NIC inline from subnet/address/sg) —
+  // replaced by NIC-reference attach (attach an existing kacho-vpc NIC by id).
+  reserved 2, 3, 4, 5, 6;
+  reserved "network_interface_index", "subnet_id", "primary_v4_address_spec", "security_group_ids";
 
-  // The index of the network interface
-  string network_interface_index = 2 [(required) = true];
+  // ID of the instance to attach the network interface to.
+  string instance_id = 1 [
+    (required) = true,
+    (length) = "<=50"
+  ];
 
-  // ID of the subnet.
-  string subnet_id = 3 [(required) = true];
-
-  // Primary IPv4 address that will be assigned to the instance for this network interface.
-  PrimaryAddressSpec primary_v4_address_spec = 4;
-
-  reserved 5;
-
-  // ID's of security groups attached to the interface.
-  repeated string security_group_ids = 6 [(required) = true];
+  // NIC to attach (existing kacho-vpc NetworkInterface, referenced by id).
+  AttachedNicSpec attached_nic_spec = 7 [(required) = true];
 }
 
 message AttachInstanceNetworkInterfaceMetadata {
-  // ID of the instant network interface that is being updated.
+  reserved 2;
+  reserved "network_interface_index";
+
+  // ID of the instance the network interface is being attached to.
   string instance_id = 1;
-  string network_interface_index = 2;
+
+  // ID of the kacho-vpc NetworkInterface (NIC) being attached.
+  string nic_id = 3;
 }
 
 message DetachInstanceNetworkInterfaceRequest {
-  // ID of the instance that in which network interface is being attached to.
-  string instance_id = 1 [(required) = true];
+  reserved 2;
+  reserved "network_interface_index";
 
-  // The index of the network interface.
-  string network_interface_index = 2 [(required) = true];
+  // ID of the instance to detach the network interface from.
+  string instance_id = 1 [
+    (required) = true,
+    (length) = "<=50"
+  ];
+
+  oneof network_interface {
+    option (exactly_one) = true;
+
+    // ID of the kacho-vpc NetworkInterface (NIC, prefix "enp") to detach.
+    string nic_id = 3 [(length) = "<=50"];
+
+    // Slot index of the network interface to detach.
+    int32 index = 4;
+  }
 }
 
 message DetachInstanceNetworkInterfaceMetadata {
-  // ID of the instant network interface that is being updated.
+  reserved 2;
+  reserved "network_interface_index";
+
+  // ID of the instance the network interface is being detached from.
   string instance_id = 1;
 
-  // The index of the network interface.
-  string network_interface_index = 2;
+  // ID of the kacho-vpc NetworkInterface (NIC) being detached.
+  string nic_id = 3;
 }
 
 // Enables One-to-one NAT on the network interface.
@@ -1120,6 +1169,13 @@ message ResourcesSpec {
 
   // The number of GPUs available to the instance.
   int64 gpus = 4 [(value) = "0,1,2,4"];
+
+  // Guaranteed CPU baseline per vCPU, in percent (INPUT sizing).
+  //   0        = best-effort / burstable (no guarantee);
+  //   1..100   = guaranteed percentage (CHECK 0..100; per-platform set).
+  // Mirrors the output [kacho.cloud.compute.v1.Instance.cpu_guarantee_percent].
+  // Sizing is mutable only while the instance is STOPPED (server-enforced).
+  int32 cpu_guarantee_percent = 5 [(value) = "0-100"];
 }
 
 message AttachedDiskSpec {
@@ -1152,8 +1208,8 @@ message AttachedDiskSpec {
     // Disk specification.
     DiskSpec disk_spec = 4;
 
-    // ID of the disk that should be attached.
-    string disk_id = 5 [(length) = "<=50"];
+    // ID of the storage Volume (prefix "vol") that should be attached.
+    string volume_id = 5 [(length) = "<=50"];
   }
 
   message DiskSpec {
