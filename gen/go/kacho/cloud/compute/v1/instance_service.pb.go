@@ -479,7 +479,14 @@ type CreateInstanceRequest struct {
 	// Reserved instance pool resource configuration must match the resource configuration of the instance.
 	ReservedInstancePoolId string `protobuf:"bytes,24,opt,name=reserved_instance_pool_id,json=reservedInstancePoolId,proto3" json:"reserved_instance_pool_id,omitempty"`
 	// Instance application settings.
-	Application   *Application `protobuf:"bytes,25,opt,name=application,proto3" json:"application,omitempty"`
+	Application *Application `protobuf:"bytes,25,opt,name=application,proto3" json:"application,omitempty"`
+	// OCI image reference (kacho-registry) the instance's OS is delivered from.
+	// INPUT: the rootfs is ephemeral and the OS is delivered from this image at
+	// create time. The server resolves it to an immutable content digest, surfaced
+	// output-only as [kacho.cloud.compute.v1.Instance.image_digest]. Populates the
+	// output [kacho.cloud.compute.v1.Instance.image]. See the compute→storage
+	// cutover (persistent state lives on attached storage Volumes).
+	Image         string `protobuf:"bytes,26,opt,name=image,proto3" json:"image,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -689,6 +696,13 @@ func (x *CreateInstanceRequest) GetApplication() *Application {
 	return nil
 }
 
+func (x *CreateInstanceRequest) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
 type CreateInstanceMetadata struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// ID of the instance that is being created.
@@ -793,7 +807,13 @@ type UpdateInstanceRequest struct {
 	// Reserved instance pool resource configuration must match the resource configuration of the instance.
 	ReservedInstancePoolId string `protobuf:"bytes,17,opt,name=reserved_instance_pool_id,json=reservedInstancePoolId,proto3" json:"reserved_instance_pool_id,omitempty"`
 	// Instance application settings.
-	Application   *Application `protobuf:"bytes,18,opt,name=application,proto3" json:"application,omitempty"`
+	Application *Application `protobuf:"bytes,18,opt,name=application,proto3" json:"application,omitempty"`
+	// OCI image reference (kacho-registry) the instance's OS is delivered from.
+	// Re-pins the OS image; the server re-resolves the immutable content digest
+	// surfaced output-only as [kacho.cloud.compute.v1.Instance.image_digest].
+	// Applied per update_mask discipline (member of the mask known-set); a re-pin
+	// is server-enforced to be admissible only while the instance is STOPPED.
+	Image         string `protobuf:"bytes,19,opt,name=image,proto3" json:"image,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -952,6 +972,13 @@ func (x *UpdateInstanceRequest) GetApplication() *Application {
 		return x.Application
 	}
 	return nil
+}
+
+func (x *UpdateInstanceRequest) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
 }
 
 type UpdateInstanceMetadata struct {
@@ -3008,9 +3035,17 @@ type ResourcesSpec struct {
 	// For more information, see [Levels of core performance](/docs/compute/concepts/performance-levels).
 	CoreFraction int64 `protobuf:"varint,3,opt,name=core_fraction,json=coreFraction,proto3" json:"core_fraction,omitempty"`
 	// The number of GPUs available to the instance.
-	Gpus          int64 `protobuf:"varint,4,opt,name=gpus,proto3" json:"gpus,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Gpus int64 `protobuf:"varint,4,opt,name=gpus,proto3" json:"gpus,omitempty"`
+	// Guaranteed CPU baseline per vCPU, in percent (INPUT sizing).
+	//
+	//	0        = best-effort / burstable (no guarantee);
+	//	1..100   = guaranteed percentage (CHECK 0..100; per-platform set).
+	//
+	// Mirrors the output [kacho.cloud.compute.v1.Instance.cpu_guarantee_percent].
+	// Sizing is mutable only while the instance is STOPPED (server-enforced).
+	CpuGuaranteePercent int32 `protobuf:"varint,5,opt,name=cpu_guarantee_percent,json=cpuGuaranteePercent,proto3" json:"cpu_guarantee_percent,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ResourcesSpec) Reset() {
@@ -3067,6 +3102,13 @@ func (x *ResourcesSpec) GetCoreFraction() int64 {
 func (x *ResourcesSpec) GetGpus() int64 {
 	if x != nil {
 		return x.Gpus
+	}
+	return 0
+}
+
+func (x *ResourcesSpec) GetCpuGuaranteePercent() int32 {
+	if x != nil {
+		return x.CpuGuaranteePercent
 	}
 	return 0
 }
@@ -4122,7 +4164,7 @@ const file_kacho_cloud_compute_v1_instance_service_proto_rawDesc = "" +
 	"\border_by\x18\x05 \x01(\tB\t\x8a\xc81\x05<=100R\aorderBy\"\x7f\n" +
 	"\x15ListInstancesResponse\x12>\n" +
 	"\tinstances\x18\x01 \x03(\v2 .kacho.cloud.compute.v1.InstanceR\tinstances\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xc4\x10\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xe5\x10\n" +
 	"\x15CreateInstanceRequest\x12+\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tB\f\xe8\xc71\x01\x8a\xc81\x04<=50R\tprojectId\x129\n" +
@@ -4152,7 +4194,8 @@ const file_kacho_cloud_compute_v1_instance_service_proto_rawDesc = "" +
 	"\xfa\xc71\x061s-24hR\x16maintenanceGracePeriod\x12\\\n" +
 	"\x14serial_port_settings\x18\x17 \x01(\v2*.kacho.cloud.compute.v1.SerialPortSettingsR\x12serialPortSettings\x12C\n" +
 	"\x19reserved_instance_pool_id\x18\x18 \x01(\tB\b\x8a\xc81\x04<=50R\x16reservedInstancePoolId\x12E\n" +
-	"\vapplication\x18\x19 \x01(\v2#.kacho.cloud.compute.v1.ApplicationR\vapplication\x1a9\n" +
+	"\vapplication\x18\x19 \x01(\v2#.kacho.cloud.compute.v1.ApplicationR\vapplication\x12\x1f\n" +
+	"\x05image\x18\x1a \x01(\tB\t\x8a\xc81\x05<=256R\x05image\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a;\n" +
@@ -4161,7 +4204,7 @@ const file_kacho_cloud_compute_v1_instance_service_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"C\n" +
 	"\x16CreateInstanceMetadata\x12)\n" +
 	"\vinstance_id\x18\x01 \x01(\tB\b\x8a\xc81\x04<=50R\n" +
-	"instanceId\"\xea\v\n" +
+	"instanceId\"\x8b\f\n" +
 	"\x15UpdateInstanceRequest\x12-\n" +
 	"\vinstance_id\x18\x01 \x01(\tB\f\xe8\xc71\x01\x8a\xc81\x04<=50R\n" +
 	"instanceId\x12;\n" +
@@ -4185,7 +4228,8 @@ const file_kacho_cloud_compute_v1_instance_service_proto_rawDesc = "" +
 	"\xfa\xc71\x061s-24hR\x16maintenanceGracePeriod\x12\\\n" +
 	"\x14serial_port_settings\x18\x10 \x01(\v2*.kacho.cloud.compute.v1.SerialPortSettingsR\x12serialPortSettings\x12C\n" +
 	"\x19reserved_instance_pool_id\x18\x11 \x01(\tB\b\x8a\xc81\x04<=50R\x16reservedInstancePoolId\x12E\n" +
-	"\vapplication\x18\x12 \x01(\v2#.kacho.cloud.compute.v1.ApplicationR\vapplication\x1a9\n" +
+	"\vapplication\x18\x12 \x01(\v2#.kacho.cloud.compute.v1.ApplicationR\vapplication\x12\x1f\n" +
+	"\x05image\x18\x13 \x01(\tB\t\x8a\xc81\x05<=256R\x05image\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a;\n" +
@@ -4344,12 +4388,13 @@ const file_kacho_cloud_compute_v1_instance_service_proto_rawDesc = "" +
 	"\n" +
 	"operations\x18\x01 \x03(\v2 .kacho.cloud.operation.OperationR\n" +
 	"operations\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x8a\x02\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xc9\x02\n" +
 	"\rResourcesSpec\x12.\n" +
 	"\x06memory\x18\x01 \x01(\x03B\x16\xe8\xc71\x01\xfa\xc71\x0e<=274877906944R\x06memory\x12p\n" +
 	"\x05cores\x18\x02 \x01(\x03BZ\xe8\xc71\x01\xfa\xc71R2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,40,44,48,52,56,60,64,68,72,76,80R\x05cores\x126\n" +
 	"\rcore_fraction\x18\x03 \x01(\x03B\x11\xfa\xc71\r0,5,20,50,100R\fcoreFraction\x12\x1f\n" +
-	"\x04gpus\x18\x04 \x01(\x03B\v\xfa\xc71\a0,1,2,4R\x04gpus\"\xc8\x06\n" +
+	"\x04gpus\x18\x04 \x01(\x03B\v\xfa\xc71\a0,1,2,4R\x04gpus\x12=\n" +
+	"\x15cpu_guarantee_percent\x18\x05 \x01(\x05B\t\xfa\xc71\x050-100R\x13cpuGuaranteePercent\"\xc8\x06\n" +
 	"\x10AttachedDiskSpec\x12A\n" +
 	"\x04mode\x18\x01 \x01(\x0e2-.kacho.cloud.compute.v1.AttachedDiskSpec.ModeR\x04mode\x129\n" +
 	"\vdevice_name\x18\x02 \x01(\tB\x18\xf2\xc71\x14[a-z][a-z0-9-_]{,19}R\n" +

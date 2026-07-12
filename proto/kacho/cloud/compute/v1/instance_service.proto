@@ -665,6 +665,14 @@ message CreateInstanceRequest {
 
   // Instance application settings.
   Application application = 25;
+
+  // OCI image reference (kacho-registry) the instance's OS is delivered from.
+  // INPUT: the rootfs is ephemeral and the OS is delivered from this image at
+  // create time. The server resolves it to an immutable content digest, surfaced
+  // output-only as [kacho.cloud.compute.v1.Instance.image_digest]. Populates the
+  // output [kacho.cloud.compute.v1.Instance.image]. See the compute→storage
+  // cutover (persistent state lives on attached storage Volumes).
+  string image = 26 [(length) = "<=256"];
 }
 
 message CreateInstanceMetadata {
@@ -757,6 +765,13 @@ message UpdateInstanceRequest {
 
   // Instance application settings.
   Application application = 18;
+
+  // OCI image reference (kacho-registry) the instance's OS is delivered from.
+  // Re-pins the OS image; the server re-resolves the immutable content digest
+  // surfaced output-only as [kacho.cloud.compute.v1.Instance.image_digest].
+  // Applied per update_mask discipline (member of the mask known-set); a re-pin
+  // is server-enforced to be admissible only while the instance is STOPPED.
+  string image = 19 [(length) = "<=256"];
 }
 
 message UpdateInstanceMetadata {
@@ -1154,6 +1169,13 @@ message ResourcesSpec {
 
   // The number of GPUs available to the instance.
   int64 gpus = 4 [(value) = "0,1,2,4"];
+
+  // Guaranteed CPU baseline per vCPU, in percent (INPUT sizing).
+  //   0        = best-effort / burstable (no guarantee);
+  //   1..100   = guaranteed percentage (CHECK 0..100; per-platform set).
+  // Mirrors the output [kacho.cloud.compute.v1.Instance.cpu_guarantee_percent].
+  // Sizing is mutable only while the instance is STOPPED (server-enforced).
+  int32 cpu_guarantee_percent = 5 [(value) = "0-100"];
 }
 
 message AttachedDiskSpec {
