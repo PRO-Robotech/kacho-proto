@@ -45,6 +45,9 @@ const (
 type UserOAuthClient struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// ID строки-маппинга (он же key_id / JWK `kid`).
+	// Конвенция Kachō: новый формат `uoc<17-crockford>` (ids.NewID, без underscore);
+	// legacy `uoc_<body>` принимается для существующих строк (credential-id/JWK kid,
+	// неизменяем). Оба формата валидны.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// ID пользователя, которому принадлежит токен.
 	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -192,9 +195,9 @@ var File_kacho_cloud_iam_v1_user_oauth_client_proto protoreflect.FileDescriptor
 
 const file_kacho_cloud_iam_v1_user_oauth_client_proto_rawDesc = "" +
 	"\n" +
-	"*kacho/cloud/iam/v1/user_oauth_client.proto\x12\x12kacho.cloud.iam.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1ckacho/cloud/validation.proto\"\xa7\x05\n" +
-	"\x0fUserOAuthClient\x12-\n" +
-	"\x02id\x18\x01 \x01(\tB\x1d\xe8\xc71\x01\xf2\xc71\ruoc_[0-9a-z]+\x8a\xc81\x04<=20R\x02id\x12%\n" +
+	"*kacho/cloud/iam/v1/user_oauth_client.proto\x12\x12kacho.cloud.iam.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1ckacho/cloud/validation.proto\"\xc0\x05\n" +
+	"\x0fUserOAuthClient\x12F\n" +
+	"\x02id\x18\x01 \x01(\tB6\xe8\xc71\x01\xf2\xc71&uoc(_[0-9a-z]+|[0-9a-hjkmnp-tv-z]{17})\x8a\xc81\x04<=21R\x02id\x12%\n" +
 	"\auser_id\x18\x02 \x01(\tB\f\xe8\xc71\x01\x8a\xc81\x04<=20R\x06userId\x125\n" +
 	"\x0fhydra_client_id\x18\x03 \x01(\tB\r\xe8\xc71\x01\x8a\xc81\x051-128R\rhydraClientId\x12+\n" +
 	"\vdescription\x18\x04 \x01(\tB\t\x8a\xc81\x05<=256R\vdescription\x129\n" +

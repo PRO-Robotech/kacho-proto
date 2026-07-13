@@ -190,7 +190,7 @@ message ListSAKeysResponse {
 
 message RevokeSAKeyRequest {
   string service_account_id = 1 [(required) = true, (length) = "<=20"];
-  string key_id              = 2 [(required) = true, (length) = "<=20"];
+  string key_id              = 2 [(required) = true, (length) = "<=21"];
 }
 
 message RevokeSAKeyResponse {

@@ -737,7 +737,7 @@ const file_kacho_cloud_iam_v1_sa_key_service_proto_rawDesc = "" +
 	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"u\n" +
 	"\x12RevokeSAKeyRequest\x12:\n" +
 	"\x12service_account_id\x18\x01 \x01(\tB\f\xe8\xc71\x01\x8a\xc81\x04<=20R\x10serviceAccountId\x12#\n" +
-	"\x06key_id\x18\x02 \x01(\tB\f\xe8\xc71\x01\x8a\xc81\x04<=20R\x05keyId\"g\n" +
+	"\x06key_id\x18\x02 \x01(\tB\f\xe8\xc71\x01\x8a\xc81\x04<=21R\x05keyId\"g\n" +
 	"\x13RevokeSAKeyResponse\x12\x15\n" +
 	"\x06key_id\x18\x01 \x01(\tR\x05keyId\x129\n" +
 	"\n" +

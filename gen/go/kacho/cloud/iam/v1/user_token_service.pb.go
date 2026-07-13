@@ -591,7 +591,7 @@ const file_kacho_cloud_iam_v1_user_token_service_proto_rawDesc = "" +
 	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"h\n" +
 	"\x16RevokeUserTokenRequest\x12%\n" +
 	"\auser_id\x18\x01 \x01(\tB\f\xe8\xc71\x01\x8a\xc81\x04<=20R\x06userId\x12'\n" +
-	"\btoken_id\x18\x02 \x01(\tB\f\xe8\xc71\x01\x8a\xc81\x04<=20R\atokenId\"o\n" +
+	"\btoken_id\x18\x02 \x01(\tB\f\xe8\xc71\x01\x8a\xc81\x04<=21R\atokenId\"o\n" +
 	"\x17RevokeUserTokenResponse\x12\x19\n" +
 	"\btoken_id\x18\x01 \x01(\tR\atokenId\x129\n" +
 	"\n" +
@@ -600,14 +600,14 @@ const file_kacho_cloud_iam_v1_user_token_service_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
 	"\btoken_id\x18\x02 \x01(\tR\atokenId\x12\x1d\n" +
 	"\n" +
-	"account_id\x18\x03 \x01(\tR\taccountId2\xed\x05\n" +
-	"\x10UserTokenService\x12\xfe\x01\n" +
-	"\x05Issue\x12).kacho.cloud.iam.v1.IssueUserTokenRequest\x1a .kacho.cloud.operation.Operation\"\xa7\x01\x8a\xb5\x18\x1biam.issue_user_tokens.issue\x92\xb5\x18\vtoken_admin\x9a\xb5\x18\x13\n" +
+	"account_id\x18\x03 \x01(\tR\taccountId2\xe2\x05\n" +
+	"\x10UserTokenService\x12\xfb\x01\n" +
+	"\x05Issue\x12).kacho.cloud.iam.v1.IssueUserTokenRequest\x1a .kacho.cloud.operation.Operation\"\xa4\x01\x8a\xb5\x18\x1biam.issue_user_tokens.issue\x92\xb5\x18\bv_update\x9a\xb5\x18\x13\n" +
 	"\biam_user\x12\auser_id\xa2\xb5\x18\x012\xb2\xd2*0\n" +
-	"\x16IssueUserTokenMetadata\x12\x16IssueUserTokenResponse\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/iam/v1/users/{user_id}/tokens\x12\xc8\x01\n" +
-	"\x04List\x12).kacho.cloud.iam.v1.ListUserTokensRequest\x1a*.kacho.cloud.iam.v1.ListUserTokensResponse\"i\x8a\xb5\x18\x14iam.user_tokens.list\x92\xb5\x18\vtoken_admin\x9a\xb5\x18\x13\n" +
-	"\biam_user\x12\auser_id\xa2\xb5\x18\x012\x82\xd3\xe4\x93\x02 \x12\x1e/iam/v1/users/{user_id}/tokens\x12\x8c\x02\n" +
-	"\x06Revoke\x12*.kacho.cloud.iam.v1.RevokeUserTokenRequest\x1a .kacho.cloud.operation.Operation\"\xb3\x01\x8a\xb5\x18\x1diam.revoke_user_tokens.revoke\x92\xb5\x18\vtoken_admin\x9a\xb5\x18\x13\n" +
+	"\x16IssueUserTokenMetadata\x12\x16IssueUserTokenResponse\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/iam/v1/users/{user_id}/tokens\x12\xc3\x01\n" +
+	"\x04List\x12).kacho.cloud.iam.v1.ListUserTokensRequest\x1a*.kacho.cloud.iam.v1.ListUserTokensResponse\"d\x8a\xb5\x18\x14iam.user_tokens.list\x92\xb5\x18\x06v_list\x9a\xb5\x18\x13\n" +
+	"\biam_user\x12\auser_id\xa2\xb5\x18\x012\x82\xd3\xe4\x93\x02 \x12\x1e/iam/v1/users/{user_id}/tokens\x12\x89\x02\n" +
+	"\x06Revoke\x12*.kacho.cloud.iam.v1.RevokeUserTokenRequest\x1a .kacho.cloud.operation.Operation\"\xb0\x01\x8a\xb5\x18\x1diam.revoke_user_tokens.revoke\x92\xb5\x18\bv_update\x9a\xb5\x18\x13\n" +
 	"\biam_user\x12\auser_id\xa2\xb5\x18\x012\xb2\xd2*2\n" +
 	"\x17RevokeUserTokenMetadata\x12\x17RevokeUserTokenResponse\x82\xd3\xe4\x93\x02+*)/iam/v1/users/{user_id}/tokens/{token_id}BEZCgithub.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/iam/v1;iamv1b\x06proto3"
 

@@ -43,6 +43,9 @@ const (
 type ServiceAccountOAuthClient struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// ID of the mapping row.
+	// Конвенция Kachō: новый формат `soc<17-crockford>` (ids.NewID, без underscore);
+	// legacy `soc_<body>` принимается для существующих строк (credential-id/JWK kid,
+	// неизменяем — не регенерируется). Оба формата валидны.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// ID of the ServiceAccount this client is bound to. UNIQUE — 1:1 mapping.
 	SvaId string `protobuf:"bytes,2,opt,name=sva_id,json=svaId,proto3" json:"sva_id,omitempty"`
@@ -174,9 +177,9 @@ var File_kacho_cloud_iam_v1_service_account_oauth_client_proto protoreflect.File
 
 const file_kacho_cloud_iam_v1_service_account_oauth_client_proto_rawDesc = "" +
 	"\n" +
-	"5kacho/cloud/iam/v1/service_account_oauth_client.proto\x12\x12kacho.cloud.iam.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1ckacho/cloud/validation.proto\"\xee\x04\n" +
-	"\x19ServiceAccountOAuthClient\x12-\n" +
-	"\x02id\x18\x01 \x01(\tB\x1d\xe8\xc71\x01\xf2\xc71\rsoc_[0-9a-z]+\x8a\xc81\x04<=20R\x02id\x12#\n" +
+	"5kacho/cloud/iam/v1/service_account_oauth_client.proto\x12\x12kacho.cloud.iam.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1ckacho/cloud/validation.proto\"\x87\x05\n" +
+	"\x19ServiceAccountOAuthClient\x12F\n" +
+	"\x02id\x18\x01 \x01(\tB6\xe8\xc71\x01\xf2\xc71&soc(_[0-9a-z]+|[0-9a-hjkmnp-tv-z]{17})\x8a\xc81\x04<=21R\x02id\x12#\n" +
 	"\x06sva_id\x18\x02 \x01(\tB\f\xe8\xc71\x01\x8a\xc81\x04<=20R\x05svaId\x125\n" +
 	"\x0fhydra_client_id\x18\x03 \x01(\tB\r\xe8\xc71\x01\x8a\xc81\x051-128R\rhydraClientId\x12+\n" +
 	"\vdescription\x18\x04 \x01(\tB\t\x8a\xc81\x05<=256R\vdescription\x129\n" +
