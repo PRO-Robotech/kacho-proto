@@ -64,7 +64,12 @@ type UserOAuthClient struct {
 	// SPKI-encoded ECDSA P-256 публичный ключ, зарегистрированный в Hydra как JWK.
 	PublicKeyPem string `protobuf:"bytes,9,opt,name=public_key_pem,json=publicKeyPem,proto3" json:"public_key_pem,omitempty"`
 	// JOSE alg зарегистрированного ключа. Всегда "ES256" для новых токенов.
-	KeyAlgorithm  string `protobuf:"bytes,10,opt,name=key_algorithm,json=keyAlgorithm,proto3" json:"key_algorithm,omitempty"`
+	KeyAlgorithm string `protobuf:"bytes,10,opt,name=key_algorithm,json=keyAlgorithm,proto3" json:"key_algorithm,omitempty"`
+	// Tenant-facing имя токена (задаётся при выпуске, immutable). Пусто → в UI
+	// показывается description/id. Человекочитаемая метка токена, не идентификатор.
+	Name string `protobuf:"bytes,11,opt,name=name,proto3" json:"name,omitempty"`
+	// Пользовательские метки токена (задаются при выпуске, immutable).
+	Labels        map[string]string `protobuf:"bytes,12,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -169,11 +174,25 @@ func (x *UserOAuthClient) GetKeyAlgorithm() string {
 	return ""
 }
 
+func (x *UserOAuthClient) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UserOAuthClient) GetLabels() map[string]string {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
 var File_kacho_cloud_iam_v1_user_oauth_client_proto protoreflect.FileDescriptor
 
 const file_kacho_cloud_iam_v1_user_oauth_client_proto_rawDesc = "" +
 	"\n" +
-	"*kacho/cloud/iam/v1/user_oauth_client.proto\x12\x12kacho.cloud.iam.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1ckacho/cloud/validation.proto\"\x85\x04\n" +
+	"*kacho/cloud/iam/v1/user_oauth_client.proto\x12\x12kacho.cloud.iam.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1ckacho/cloud/validation.proto\"\xa7\x05\n" +
 	"\x0fUserOAuthClient\x12-\n" +
 	"\x02id\x18\x01 \x01(\tB\x1d\xe8\xc71\x01\xf2\xc71\ruoc_[0-9a-z]+\x8a\xc81\x04<=20R\x02id\x12%\n" +
 	"\auser_id\x18\x02 \x01(\tB\f\xe8\xc71\x01\x8a\xc81\x04<=20R\x06userId\x125\n" +
@@ -188,7 +207,12 @@ const file_kacho_cloud_iam_v1_user_oauth_client_proto_rawDesc = "" +
 	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12$\n" +
 	"\x0epublic_key_pem\x18\t \x01(\tR\fpublicKeyPem\x12#\n" +
 	"\rkey_algorithm\x18\n" +
-	" \x01(\tR\fkeyAlgorithmBEZCgithub.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/iam/v1;iamv1b\x06proto3"
+	" \x01(\tR\fkeyAlgorithm\x12\x1c\n" +
+	"\x04name\x18\v \x01(\tB\b\x8a\xc81\x04<=63R\x04name\x12G\n" +
+	"\x06labels\x18\f \x03(\v2/.kacho.cloud.iam.v1.UserOAuthClient.LabelsEntryR\x06labels\x1a9\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01BEZCgithub.com/PRO-Robotech/kacho-proto/gen/go/kacho/cloud/iam/v1;iamv1b\x06proto3"
 
 var (
 	file_kacho_cloud_iam_v1_user_oauth_client_proto_rawDescOnce sync.Once
@@ -202,20 +226,22 @@ func file_kacho_cloud_iam_v1_user_oauth_client_proto_rawDescGZIP() []byte {
 	return file_kacho_cloud_iam_v1_user_oauth_client_proto_rawDescData
 }
 
-var file_kacho_cloud_iam_v1_user_oauth_client_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_kacho_cloud_iam_v1_user_oauth_client_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_kacho_cloud_iam_v1_user_oauth_client_proto_goTypes = []any{
 	(*UserOAuthClient)(nil),       // 0: kacho.cloud.iam.v1.UserOAuthClient
-	(*timestamppb.Timestamp)(nil), // 1: google.protobuf.Timestamp
+	nil,                           // 1: kacho.cloud.iam.v1.UserOAuthClient.LabelsEntry
+	(*timestamppb.Timestamp)(nil), // 2: google.protobuf.Timestamp
 }
 var file_kacho_cloud_iam_v1_user_oauth_client_proto_depIdxs = []int32{
-	1, // 0: kacho.cloud.iam.v1.UserOAuthClient.expires_at:type_name -> google.protobuf.Timestamp
-	1, // 1: kacho.cloud.iam.v1.UserOAuthClient.last_used_at:type_name -> google.protobuf.Timestamp
-	1, // 2: kacho.cloud.iam.v1.UserOAuthClient.created_at:type_name -> google.protobuf.Timestamp
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	2, // 0: kacho.cloud.iam.v1.UserOAuthClient.expires_at:type_name -> google.protobuf.Timestamp
+	2, // 1: kacho.cloud.iam.v1.UserOAuthClient.last_used_at:type_name -> google.protobuf.Timestamp
+	2, // 2: kacho.cloud.iam.v1.UserOAuthClient.created_at:type_name -> google.protobuf.Timestamp
+	1, // 3: kacho.cloud.iam.v1.UserOAuthClient.labels:type_name -> kacho.cloud.iam.v1.UserOAuthClient.LabelsEntry
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_kacho_cloud_iam_v1_user_oauth_client_proto_init() }
@@ -229,7 +255,7 @@ func file_kacho_cloud_iam_v1_user_oauth_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_kacho_cloud_iam_v1_user_oauth_client_proto_rawDesc), len(file_kacho_cloud_iam_v1_user_oauth_client_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

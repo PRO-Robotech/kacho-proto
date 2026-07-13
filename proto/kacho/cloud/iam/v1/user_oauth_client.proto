@@ -57,4 +57,11 @@ message UserOAuthClient {
 
   // JOSE alg зарегистрированного ключа. Всегда "ES256" для новых токенов.
   string key_algorithm = 10;
+
+  // Tenant-facing имя токена (задаётся при выпуске, immutable). Пусто → в UI
+  // показывается description/id. Человекочитаемая метка токена, не идентификатор.
+  string name = 11 [(length) = "<=63"];
+
+  // Пользовательские метки токена (задаются при выпуске, immutable).
+  map<string, string> labels = 12;
 }
