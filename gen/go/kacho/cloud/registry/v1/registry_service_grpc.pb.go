@@ -32,6 +32,12 @@ const (
 	RegistryService_ListTags_FullMethodName         = "/kacho.cloud.registry.v1.RegistryService/ListTags"
 	RegistryService_DeleteTag_FullMethodName        = "/kacho.cloud.registry.v1.RegistryService/DeleteTag"
 	RegistryService_ListOperations_FullMethodName   = "/kacho.cloud.registry.v1.RegistryService/ListOperations"
+	RegistryService_GetRepository_FullMethodName    = "/kacho.cloud.registry.v1.RegistryService/GetRepository"
+	RegistryService_CreateRepository_FullMethodName = "/kacho.cloud.registry.v1.RegistryService/CreateRepository"
+	RegistryService_UpdateRepository_FullMethodName = "/kacho.cloud.registry.v1.RegistryService/UpdateRepository"
+	RegistryService_DeleteRepository_FullMethodName = "/kacho.cloud.registry.v1.RegistryService/DeleteRepository"
+	RegistryService_RenameRepository_FullMethodName = "/kacho.cloud.registry.v1.RegistryService/RenameRepository"
+	RegistryService_ListReferrers_FullMethodName    = "/kacho.cloud.registry.v1.RegistryService/ListReferrers"
 )
 
 // RegistryServiceClient is the client API for RegistryService service.
@@ -71,6 +77,38 @@ type RegistryServiceClient interface {
 	// resource_id=registry_id). Interceptor-gated per-RPC Check v_list на
 	// registry_registry (как Get) → в allowlist как публичный gRPC-путь.
 	ListOperations(ctx context.Context, in *ListRegistryOperationsRequest, opts ...grpc.CallOption) (*ListRegistryOperationsResponse, error)
+	// GetRepository — sync-чтение repo (overlay LEFT JOIN projection; durable
+	// survives-empty). Handler: per-repo v_get Check; unauthorized|absent → NOT_FOUND.
+	GetRepository(ctx context.Context, in *GetRepositoryRequest, opts ...grpc.CallOption) (*Repository, error)
+	// CreateRepository — async. Вставка overlay-строки (durable, survives-empty);
+	// uniqueness (registry_id,name) — DB UNIQUE (дубликат → ALREADY_EXISTS, ban #10).
+	// Handler: namespace call-gate (невидимый реестр → NOT_FOUND, X04) + v_create;
+	// явный visibility=PUBLIC требует registry admin (B08 → PERMISSION_DENIED).
+	CreateRepository(ctx context.Context, in *CreateRepositoryRequest, opts ...grpc.CallOption) (*operation.Operation, error)
+	// UpdateRepository — async, FieldMask-PATCH overlay (description/labels/visibility;
+	// name immutable → RenameRepository). Handler: per-repo v_update Check; visibility
+	// в mask → registry admin (B02 → PERMISSION_DENIED). Promote ephemeral→durable
+	// (overlay upsert). Deny|absent → NOT_FOUND.
+	UpdateRepository(ctx context.Context, in *UpdateRepositoryRequest, opts ...grpc.CallOption) (*operation.Operation, error)
+	// DeleteRepository — async, reject-if-tags (D-4). Пустой durable → снимает overlay
+	// + unregister FGA repo-tuples (same-registry only, ban #4); не-пустой → Operation
+	// error FAILED_PRECONDITION "repository is not empty" (проверка emptiness в worker'е).
+	// Handler: per-repo v_delete Check синхронно ДО LRO; unauthorized|absent → sync
+	// NOT_FOUND, Operation НЕ создаётся (A15 — как DeleteTag).
+	DeleteRepository(ctx context.Context, in *DeleteRepositoryRequest, opts ...grpc.CallOption) (*operation.Operation, error)
+	// RenameRepository — async, в пределах ОДНОГО реестра (new_name — голое repo-имя;
+	// cross-registry rename структурно невыразим, D-5). Durable → re-key overlay-имя
+	// (UPDATE); ephemeral → auto-promote в durable (INSERT). Engine re-home тегов/
+	// манифестов/referrers, старое имя → 404. Целевое имя занято → ALREADY_EXISTS;
+	// malformed|no-op new_name → INVALID_ARGUMENT; движок недоступен в середине remap →
+	// Operation error UNAVAILABLE fail-closed (без частичного rename, A21). Handler:
+	// v_update@repo + v_create@registry; deny|absent → NOT_FOUND.
+	RenameRepository(ctx context.Context, in *RenameRepositoryRequest, opts ...grpc.CallOption) (*operation.Operation, error)
+	// ListReferrers — sync-проекция referrer-графа одного subject_digest (D-8: bounded
+	// full-set, server-side cap как catalog-page; БЕЗ page_token/page_size — зеркалит
+	// OCI single-index /referrers/<digest>). Handler: per-repo v_get Check;
+	// unauthorized|absent repo → NOT_FOUND; subject без referrer'ов → пустой список (не 404).
+	ListReferrers(ctx context.Context, in *ListReferrersRequest, opts ...grpc.CallOption) (*ListReferrersResponse, error)
 }
 
 type registryServiceClient struct {
@@ -171,6 +209,66 @@ func (c *registryServiceClient) ListOperations(ctx context.Context, in *ListRegi
 	return out, nil
 }
 
+func (c *registryServiceClient) GetRepository(ctx context.Context, in *GetRepositoryRequest, opts ...grpc.CallOption) (*Repository, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Repository)
+	err := c.cc.Invoke(ctx, RegistryService_GetRepository_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *registryServiceClient) CreateRepository(ctx context.Context, in *CreateRepositoryRequest, opts ...grpc.CallOption) (*operation.Operation, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(operation.Operation)
+	err := c.cc.Invoke(ctx, RegistryService_CreateRepository_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *registryServiceClient) UpdateRepository(ctx context.Context, in *UpdateRepositoryRequest, opts ...grpc.CallOption) (*operation.Operation, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(operation.Operation)
+	err := c.cc.Invoke(ctx, RegistryService_UpdateRepository_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *registryServiceClient) DeleteRepository(ctx context.Context, in *DeleteRepositoryRequest, opts ...grpc.CallOption) (*operation.Operation, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(operation.Operation)
+	err := c.cc.Invoke(ctx, RegistryService_DeleteRepository_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *registryServiceClient) RenameRepository(ctx context.Context, in *RenameRepositoryRequest, opts ...grpc.CallOption) (*operation.Operation, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(operation.Operation)
+	err := c.cc.Invoke(ctx, RegistryService_RenameRepository_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *registryServiceClient) ListReferrers(ctx context.Context, in *ListReferrersRequest, opts ...grpc.CallOption) (*ListReferrersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListReferrersResponse)
+	err := c.cc.Invoke(ctx, RegistryService_ListReferrers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RegistryServiceServer is the server API for RegistryService service.
 // All implementations must embed UnimplementedRegistryServiceServer
 // for forward compatibility.
@@ -208,6 +306,38 @@ type RegistryServiceServer interface {
 	// resource_id=registry_id). Interceptor-gated per-RPC Check v_list на
 	// registry_registry (как Get) → в allowlist как публичный gRPC-путь.
 	ListOperations(context.Context, *ListRegistryOperationsRequest) (*ListRegistryOperationsResponse, error)
+	// GetRepository — sync-чтение repo (overlay LEFT JOIN projection; durable
+	// survives-empty). Handler: per-repo v_get Check; unauthorized|absent → NOT_FOUND.
+	GetRepository(context.Context, *GetRepositoryRequest) (*Repository, error)
+	// CreateRepository — async. Вставка overlay-строки (durable, survives-empty);
+	// uniqueness (registry_id,name) — DB UNIQUE (дубликат → ALREADY_EXISTS, ban #10).
+	// Handler: namespace call-gate (невидимый реестр → NOT_FOUND, X04) + v_create;
+	// явный visibility=PUBLIC требует registry admin (B08 → PERMISSION_DENIED).
+	CreateRepository(context.Context, *CreateRepositoryRequest) (*operation.Operation, error)
+	// UpdateRepository — async, FieldMask-PATCH overlay (description/labels/visibility;
+	// name immutable → RenameRepository). Handler: per-repo v_update Check; visibility
+	// в mask → registry admin (B02 → PERMISSION_DENIED). Promote ephemeral→durable
+	// (overlay upsert). Deny|absent → NOT_FOUND.
+	UpdateRepository(context.Context, *UpdateRepositoryRequest) (*operation.Operation, error)
+	// DeleteRepository — async, reject-if-tags (D-4). Пустой durable → снимает overlay
+	// + unregister FGA repo-tuples (same-registry only, ban #4); не-пустой → Operation
+	// error FAILED_PRECONDITION "repository is not empty" (проверка emptiness в worker'е).
+	// Handler: per-repo v_delete Check синхронно ДО LRO; unauthorized|absent → sync
+	// NOT_FOUND, Operation НЕ создаётся (A15 — как DeleteTag).
+	DeleteRepository(context.Context, *DeleteRepositoryRequest) (*operation.Operation, error)
+	// RenameRepository — async, в пределах ОДНОГО реестра (new_name — голое repo-имя;
+	// cross-registry rename структурно невыразим, D-5). Durable → re-key overlay-имя
+	// (UPDATE); ephemeral → auto-promote в durable (INSERT). Engine re-home тегов/
+	// манифестов/referrers, старое имя → 404. Целевое имя занято → ALREADY_EXISTS;
+	// malformed|no-op new_name → INVALID_ARGUMENT; движок недоступен в середине remap →
+	// Operation error UNAVAILABLE fail-closed (без частичного rename, A21). Handler:
+	// v_update@repo + v_create@registry; deny|absent → NOT_FOUND.
+	RenameRepository(context.Context, *RenameRepositoryRequest) (*operation.Operation, error)
+	// ListReferrers — sync-проекция referrer-графа одного subject_digest (D-8: bounded
+	// full-set, server-side cap как catalog-page; БЕЗ page_token/page_size — зеркалит
+	// OCI single-index /referrers/<digest>). Handler: per-repo v_get Check;
+	// unauthorized|absent repo → NOT_FOUND; subject без referrer'ов → пустой список (не 404).
+	ListReferrers(context.Context, *ListReferrersRequest) (*ListReferrersResponse, error)
 	mustEmbedUnimplementedRegistryServiceServer()
 }
 
@@ -244,6 +374,24 @@ func (UnimplementedRegistryServiceServer) DeleteTag(context.Context, *DeleteTagR
 }
 func (UnimplementedRegistryServiceServer) ListOperations(context.Context, *ListRegistryOperationsRequest) (*ListRegistryOperationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListOperations not implemented")
+}
+func (UnimplementedRegistryServiceServer) GetRepository(context.Context, *GetRepositoryRequest) (*Repository, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRepository not implemented")
+}
+func (UnimplementedRegistryServiceServer) CreateRepository(context.Context, *CreateRepositoryRequest) (*operation.Operation, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateRepository not implemented")
+}
+func (UnimplementedRegistryServiceServer) UpdateRepository(context.Context, *UpdateRepositoryRequest) (*operation.Operation, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateRepository not implemented")
+}
+func (UnimplementedRegistryServiceServer) DeleteRepository(context.Context, *DeleteRepositoryRequest) (*operation.Operation, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteRepository not implemented")
+}
+func (UnimplementedRegistryServiceServer) RenameRepository(context.Context, *RenameRepositoryRequest) (*operation.Operation, error) {
+	return nil, status.Error(codes.Unimplemented, "method RenameRepository not implemented")
+}
+func (UnimplementedRegistryServiceServer) ListReferrers(context.Context, *ListReferrersRequest) (*ListReferrersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListReferrers not implemented")
 }
 func (UnimplementedRegistryServiceServer) mustEmbedUnimplementedRegistryServiceServer() {}
 func (UnimplementedRegistryServiceServer) testEmbeddedByValue()                         {}
@@ -428,6 +576,114 @@ func _RegistryService_ListOperations_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RegistryService_GetRepository_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRepositoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistryServiceServer).GetRepository(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RegistryService_GetRepository_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistryServiceServer).GetRepository(ctx, req.(*GetRepositoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RegistryService_CreateRepository_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRepositoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistryServiceServer).CreateRepository(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RegistryService_CreateRepository_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistryServiceServer).CreateRepository(ctx, req.(*CreateRepositoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RegistryService_UpdateRepository_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRepositoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistryServiceServer).UpdateRepository(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RegistryService_UpdateRepository_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistryServiceServer).UpdateRepository(ctx, req.(*UpdateRepositoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RegistryService_DeleteRepository_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRepositoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistryServiceServer).DeleteRepository(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RegistryService_DeleteRepository_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistryServiceServer).DeleteRepository(ctx, req.(*DeleteRepositoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RegistryService_RenameRepository_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RenameRepositoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistryServiceServer).RenameRepository(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RegistryService_RenameRepository_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistryServiceServer).RenameRepository(ctx, req.(*RenameRepositoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RegistryService_ListReferrers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListReferrersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistryServiceServer).ListReferrers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RegistryService_ListReferrers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistryServiceServer).ListReferrers(ctx, req.(*ListReferrersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RegistryService_ServiceDesc is the grpc.ServiceDesc for RegistryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -470,6 +726,30 @@ var RegistryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListOperations",
 			Handler:    _RegistryService_ListOperations_Handler,
+		},
+		{
+			MethodName: "GetRepository",
+			Handler:    _RegistryService_GetRepository_Handler,
+		},
+		{
+			MethodName: "CreateRepository",
+			Handler:    _RegistryService_CreateRepository_Handler,
+		},
+		{
+			MethodName: "UpdateRepository",
+			Handler:    _RegistryService_UpdateRepository_Handler,
+		},
+		{
+			MethodName: "DeleteRepository",
+			Handler:    _RegistryService_DeleteRepository_Handler,
+		},
+		{
+			MethodName: "RenameRepository",
+			Handler:    _RegistryService_RenameRepository_Handler,
+		},
+		{
+			MethodName: "ListReferrers",
+			Handler:    _RegistryService_ListReferrers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

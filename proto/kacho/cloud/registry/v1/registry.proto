@@ -48,6 +48,13 @@ message Registry {
 
   // Состояние жизненного цикла.
   RegistryStatus status = 10;
+
+  // Дефолтная публичность для НОВЫХ repo в namespace — сид Repository.visibility
+  // на CreateRepository, когда явное visibility не задано (mutable через Update,
+  // дефолт PRIVATE / fail-safe). Переход default_visibility→PUBLIC требует registry
+  // admin (D-6: любой путь к PUBLIC — admin-gated). Смена НЕ перекрашивает
+  // существующие repo (per-repo Repository.visibility остаётся authoritative).
+  Visibility default_visibility = 9;
 }
 
 // RegistryStatus — терминальность DELETING обязательна (forward-only delete):
@@ -70,14 +77,37 @@ enum ArtifactType {
   ARTIFACT_TYPE_OTHER = 3;  // иной OCI-артефакт (SBOM/WASM/signature/…)
 }
 
-// Repository — OCI-репозиторий (образ) внутри namespace. Read-only проекция из
-// zot (source of truth = zot), НЕ хранится в БД kacho-registry. Per-repo authz
-// object-type `registry_repository` (parent registry_registry).
+// Visibility — публичность репозитория (overlay-authoritative на Repository;
+// сид-дефолт на Registry.default_visibility). Дефолт PRIVATE (fail-safe).
+// PUBLIC ⟺ FGA-tuple `user:* v_get registry_repository:<reg>/<repo>` (anonymous
+// pull через data-plane). ЛЮБОЙ путь, где принципал сам приводит ресурс к PUBLIC
+// (per-repo flip, create-with-PUBLIC, default_visibility→PUBLIC), требует registry
+// admin (D-6). Аноним к PRIVATE|absent-repo → uniform 404 (public-ность НЕ
+// existence-oracle).
+enum Visibility {
+  VISIBILITY_UNSPECIFIED = 0;  // не задано → наследует Registry.default_visibility
+  PRIVATE = 1;  // приватный (дефолт) — только авторизованный v_get
+  PUBLIC = 2;  // публичный — анонимный pull разрешён (user:* v_get tuple)
+}
+
+// Repository — OCI-репозиторий (образ) внутри namespace. Два ортогональных слоя
+// над натуральным ключом `(registry_id, name)` (D-1): (a) config-overlay —
+// DB-owned строка `repository_configs` в kacho-registry, несёт tenant-intent
+// (description/labels/visibility/created_at), переживает пустой repo (durable);
+// (b) проекция из zot (source of truth = zot) — счётчики/размеры/типы/timestamps
+// тегов (output-only, `°`). Публичный Repository = LEFT JOIN overlay+projection.
+// Ephemeral-repo (проекция без overlay, register-on-first-push) несёт пустые
+// overlay-поля (description=''/labels={}/visibility=PRIVATE/created_at пуст) и
+// исчезает при опустошении; durable-repo (есть overlay) — survives-empty.
+// Инфра-поля (zot namespace/bucket/host/числовой инфра-id) НИКОГДА не на публичной
+// поверхности (security.md §Инфра-данные) — те только в Internal*/:9091.
+// Per-repo authz object-type `registry_repository` (parent registry_registry).
 message Repository {
   // ID реестра-владельца.
   string registry_id = 1;
 
-  // Имя репозитория внутри namespace (напр. "backend/api").
+  // Имя репозитория внутри namespace (напр. "backend/api"). Immutable — смена
+  // только через RenameRepository (не Update). Натуральный ключ (registry_id, name).
   string name = 2;
 
   // Число тегов.
@@ -104,6 +134,24 @@ message Repository {
 
   // Output-only: суммарное число скачиваний тегов репозитория (zot download-count).
   int64 download_count = 13;
+
+  // --- config-overlay (tenant-intent, DB-owned; пусто у ephemeral-repo) ---
+
+  // Описание репозитория (overlay, mutable через UpdateRepository). Пусто, если
+  // overlay-строки нет (ephemeral-repo — проекция без конфигурации).
+  string description = 7;
+
+  // Метки репозитория (overlay, mutable через UpdateRepository). Пусто у ephemeral.
+  map<string, string> labels = 8;
+
+  // Публичность (overlay-authoritative, дефолт PRIVATE — наследуется из
+  // Registry.default_visibility на create; admin-gate на →PUBLIC, D-6). Ephemeral
+  // repo несёт PRIVATE by default.
+  Visibility visibility = 9;
+
+  // Output-only: момент создания overlay-строки (durable-repo), truncate до секунд.
+  // Пусто у ephemeral-repo (проекция без overlay — своей строки/created_at нет).
+  google.protobuf.Timestamp created_at = 10;
 }
 
 // Tag — тегированный образ (манифест) в репозитории. Read-only проекция из zot.
@@ -143,4 +191,40 @@ message Tag {
 
   // Output-only: число скачиваний тега (zot download-count).
   int64 download_count = 11;
+}
+
+// Referrer — узел referrer-графа OCI (подпись / SBOM / аттестация / generic-
+// артефакт), привязанный к subject-манифесту по его digest. Read-only проекция
+// из zot (source of truth = zot; OCI `/v2/.../referrers/<digest>`). Якорь под
+// будущие signing/scanning/SBOM под-фазы.
+//
+// Публичная поверхность несёт ТОЛЬКО tenant-intent + результат: НИ engine
+// namespace/bucket/host, НИ scanner-engine-id, НИ blob-layout, НИ числовой
+// инфра-id (security.md §Инфра-данные — те исключительно Internal*/:9091).
+// Per-repo existence-hiding: unauthorized|absent repo → NOT_FOUND (как Repository).
+message Referrer {
+  // ID реестра-владельца.
+  string registry_id = 1;
+
+  // Имя репозитория, к которому привязан referrer.
+  string repository = 2;
+
+  // Digest subject-манифеста, на который ссылается referrer (напр. "sha256:...").
+  string subject_digest = 3;
+
+  // Output-only: digest самого referrer-артефакта ("sha256:...").
+  string digest = 4;
+
+  // Output-only: OCI artifactType referrer'а (media-type facet — тип подписи /
+  // SBOM / аттестации; server-side фильтруемый в ListReferrers).
+  string artifact_type = 5;
+
+  // Output-only: размер referrer-манифеста (байт).
+  int64 size_bytes = 6;
+
+  // Output-only: OCI-аннотации referrer-манифеста.
+  map<string, string> annotations = 7;
+
+  // Output-only: момент создания referrer-артефакта (truncate до секунд).
+  google.protobuf.Timestamp created_at = 8;
 }
