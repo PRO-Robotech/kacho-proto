@@ -29,13 +29,13 @@ const (
 	RegistryService_Update_FullMethodName           = "/kacho.cloud.registry.v1.RegistryService/Update"
 	RegistryService_Delete_FullMethodName           = "/kacho.cloud.registry.v1.RegistryService/Delete"
 	RegistryService_ListRepositories_FullMethodName = "/kacho.cloud.registry.v1.RegistryService/ListRepositories"
-	RegistryService_ListTags_FullMethodName         = "/kacho.cloud.registry.v1.RegistryService/ListTags"
-	RegistryService_DeleteTag_FullMethodName        = "/kacho.cloud.registry.v1.RegistryService/DeleteTag"
 	RegistryService_ListOperations_FullMethodName   = "/kacho.cloud.registry.v1.RegistryService/ListOperations"
 	RegistryService_GetRepository_FullMethodName    = "/kacho.cloud.registry.v1.RegistryService/GetRepository"
 	RegistryService_CreateRepository_FullMethodName = "/kacho.cloud.registry.v1.RegistryService/CreateRepository"
 	RegistryService_UpdateRepository_FullMethodName = "/kacho.cloud.registry.v1.RegistryService/UpdateRepository"
 	RegistryService_DeleteRepository_FullMethodName = "/kacho.cloud.registry.v1.RegistryService/DeleteRepository"
+	RegistryService_ListTags_FullMethodName         = "/kacho.cloud.registry.v1.RegistryService/ListTags"
+	RegistryService_DeleteTag_FullMethodName        = "/kacho.cloud.registry.v1.RegistryService/DeleteTag"
 	RegistryService_RenameRepository_FullMethodName = "/kacho.cloud.registry.v1.RegistryService/RenameRepository"
 	RegistryService_ListReferrers_FullMethodName    = "/kacho.cloud.registry.v1.RegistryService/ListReferrers"
 )
@@ -66,19 +66,13 @@ type RegistryServiceClient interface {
 	// = call-gate (доступ к namespace) + row-filter по registry_repository v_list.
 	// → gateway <exempt>, authz полностью в handler'е.
 	ListRepositories(ctx context.Context, in *ListRepositoriesRequest, opts ...grpc.CallOption) (*ListRepositoriesResponse, error)
-	// ListTags — sync-проекция тегов repo из zot. Per-repo Check v_list на
-	// registry_repository в handler'е → gateway <exempt>.
-	ListTags(ctx context.Context, in *ListTagsRequest, opts ...grpc.CallOption) (*ListTagsResponse, error)
-	// DeleteTag — async, единственный destructive-путь для образов (data-plane
-	// DELETE отвергается 405). Per-repo v_delete Check синхронно в handler'е ДО
-	// создания Operation → gateway <exempt>.
-	DeleteTag(ctx context.Context, in *DeleteTagRequest, opts ...grpc.CallOption) (*operation.Operation, error)
 	// ListOperations — sync-история async-операций реестра (per-resource, фильтр по
 	// resource_id=registry_id). Interceptor-gated per-RPC Check v_list на
 	// registry_registry (как Get) → в allowlist как публичный gRPC-путь.
 	ListOperations(ctx context.Context, in *ListRegistryOperationsRequest, opts ...grpc.CallOption) (*ListRegistryOperationsResponse, error)
 	// GetRepository — sync-чтение repo (overlay LEFT JOIN projection; durable
 	// survives-empty). Handler: per-repo v_get Check; unauthorized|absent → NOT_FOUND.
+	// Bare `{repository=**}` catch-all — объявлен ПЕРЕД sub-resource'ами (precedence).
 	GetRepository(ctx context.Context, in *GetRepositoryRequest, opts ...grpc.CallOption) (*Repository, error)
 	// CreateRepository — async. Вставка overlay-строки (durable, survives-empty);
 	// uniqueness (registry_id,name) — DB UNIQUE (дубликат → ALREADY_EXISTS, ban #10).
@@ -89,25 +83,39 @@ type RegistryServiceClient interface {
 	// name immutable → RenameRepository). Handler: per-repo v_update Check; visibility
 	// в mask → registry admin (B02 → PERMISSION_DENIED). Promote ephemeral→durable
 	// (overlay upsert). Deny|absent → NOT_FOUND.
+	// Bare `{repository=**}` catch-all — объявлен ПЕРЕД sub-resource'ами (precedence).
 	UpdateRepository(ctx context.Context, in *UpdateRepositoryRequest, opts ...grpc.CallOption) (*operation.Operation, error)
 	// DeleteRepository — async, reject-if-tags (D-4). Пустой durable → снимает overlay
 	// + unregister FGA repo-tuples (same-registry only, ban #4); не-пустой → Operation
 	// error FAILED_PRECONDITION "repository is not empty" (проверка emptiness в worker'е).
 	// Handler: per-repo v_delete Check синхронно ДО LRO; unauthorized|absent → sync
 	// NOT_FOUND, Operation НЕ создаётся (A15 — как DeleteTag).
+	// Bare `{repository=**}` catch-all — объявлен ПЕРЕД sub-resource'ами (precedence).
 	DeleteRepository(ctx context.Context, in *DeleteRepositoryRequest, opts ...grpc.CallOption) (*operation.Operation, error)
+	// ListTags — sync-проекция тегов repo из zot. Per-repo Check v_list на
+	// registry_repository в handler'е → gateway <exempt>. Sub-resource `…/tags` —
+	// объявлен ПОСЛЕ GetRepository catch-all'а → пробуется РАНЬШЕ, не затеняется
+	// (см. блок-заголовок «ПОРЯДОК ОБЪЯВЛЕНИЯ ЗНАЧИМ»).
+	ListTags(ctx context.Context, in *ListTagsRequest, opts ...grpc.CallOption) (*ListTagsResponse, error)
+	// DeleteTag — async, единственный destructive-путь для образов (data-plane
+	// DELETE отвергается 405). Per-repo v_delete Check синхронно в handler'е ДО
+	// создания Operation → gateway <exempt>. Sub-resource `…/tags/{tag}` — объявлен
+	// ПОСЛЕ DeleteRepository catch-all'а → пробуется РАНЬШЕ, не затеняется.
+	DeleteTag(ctx context.Context, in *DeleteTagRequest, opts ...grpc.CallOption) (*operation.Operation, error)
 	// RenameRepository — async, в пределах ОДНОГО реестра (new_name — голое repo-имя;
 	// cross-registry rename структурно невыразим, D-5). Durable → re-key overlay-имя
 	// (UPDATE); ephemeral → auto-promote в durable (INSERT). Engine re-home тегов/
 	// манифестов/referrers, старое имя → 404. Целевое имя занято → ALREADY_EXISTS;
 	// malformed|no-op new_name → INVALID_ARGUMENT; движок недоступен в середине remap →
 	// Operation error UNAVAILABLE fail-closed (без частичного rename, A21). Handler:
-	// v_update@repo + v_create@registry; deny|absent → NOT_FOUND.
+	// v_update@repo + v_create@registry; deny|absent → NOT_FOUND. Verb-action
+	// `:rename` — объявлен ПОСЛЕ catch-all'ов → пробуется РАНЬШЕ (precedence).
 	RenameRepository(ctx context.Context, in *RenameRepositoryRequest, opts ...grpc.CallOption) (*operation.Operation, error)
 	// ListReferrers — sync-проекция referrer-графа одного subject_digest (D-8: bounded
 	// full-set, server-side cap как catalog-page; БЕЗ page_token/page_size — зеркалит
 	// OCI single-index /referrers/<digest>). Handler: per-repo v_get Check;
 	// unauthorized|absent repo → NOT_FOUND; subject без referrer'ов → пустой список (не 404).
+	// Sub-resource `…/referrers` — объявлен ПОСЛЕ catch-all'ов → пробуется РАНЬШЕ.
 	ListReferrers(ctx context.Context, in *ListReferrersRequest, opts ...grpc.CallOption) (*ListReferrersResponse, error)
 }
 
@@ -179,26 +187,6 @@ func (c *registryServiceClient) ListRepositories(ctx context.Context, in *ListRe
 	return out, nil
 }
 
-func (c *registryServiceClient) ListTags(ctx context.Context, in *ListTagsRequest, opts ...grpc.CallOption) (*ListTagsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListTagsResponse)
-	err := c.cc.Invoke(ctx, RegistryService_ListTags_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registryServiceClient) DeleteTag(ctx context.Context, in *DeleteTagRequest, opts ...grpc.CallOption) (*operation.Operation, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(operation.Operation)
-	err := c.cc.Invoke(ctx, RegistryService_DeleteTag_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *registryServiceClient) ListOperations(ctx context.Context, in *ListRegistryOperationsRequest, opts ...grpc.CallOption) (*ListRegistryOperationsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListRegistryOperationsResponse)
@@ -243,6 +231,26 @@ func (c *registryServiceClient) DeleteRepository(ctx context.Context, in *Delete
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(operation.Operation)
 	err := c.cc.Invoke(ctx, RegistryService_DeleteRepository_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *registryServiceClient) ListTags(ctx context.Context, in *ListTagsRequest, opts ...grpc.CallOption) (*ListTagsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTagsResponse)
+	err := c.cc.Invoke(ctx, RegistryService_ListTags_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *registryServiceClient) DeleteTag(ctx context.Context, in *DeleteTagRequest, opts ...grpc.CallOption) (*operation.Operation, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(operation.Operation)
+	err := c.cc.Invoke(ctx, RegistryService_DeleteTag_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -295,19 +303,13 @@ type RegistryServiceServer interface {
 	// = call-gate (доступ к namespace) + row-filter по registry_repository v_list.
 	// → gateway <exempt>, authz полностью в handler'е.
 	ListRepositories(context.Context, *ListRepositoriesRequest) (*ListRepositoriesResponse, error)
-	// ListTags — sync-проекция тегов repo из zot. Per-repo Check v_list на
-	// registry_repository в handler'е → gateway <exempt>.
-	ListTags(context.Context, *ListTagsRequest) (*ListTagsResponse, error)
-	// DeleteTag — async, единственный destructive-путь для образов (data-plane
-	// DELETE отвергается 405). Per-repo v_delete Check синхронно в handler'е ДО
-	// создания Operation → gateway <exempt>.
-	DeleteTag(context.Context, *DeleteTagRequest) (*operation.Operation, error)
 	// ListOperations — sync-история async-операций реестра (per-resource, фильтр по
 	// resource_id=registry_id). Interceptor-gated per-RPC Check v_list на
 	// registry_registry (как Get) → в allowlist как публичный gRPC-путь.
 	ListOperations(context.Context, *ListRegistryOperationsRequest) (*ListRegistryOperationsResponse, error)
 	// GetRepository — sync-чтение repo (overlay LEFT JOIN projection; durable
 	// survives-empty). Handler: per-repo v_get Check; unauthorized|absent → NOT_FOUND.
+	// Bare `{repository=**}` catch-all — объявлен ПЕРЕД sub-resource'ами (precedence).
 	GetRepository(context.Context, *GetRepositoryRequest) (*Repository, error)
 	// CreateRepository — async. Вставка overlay-строки (durable, survives-empty);
 	// uniqueness (registry_id,name) — DB UNIQUE (дубликат → ALREADY_EXISTS, ban #10).
@@ -318,25 +320,39 @@ type RegistryServiceServer interface {
 	// name immutable → RenameRepository). Handler: per-repo v_update Check; visibility
 	// в mask → registry admin (B02 → PERMISSION_DENIED). Promote ephemeral→durable
 	// (overlay upsert). Deny|absent → NOT_FOUND.
+	// Bare `{repository=**}` catch-all — объявлен ПЕРЕД sub-resource'ами (precedence).
 	UpdateRepository(context.Context, *UpdateRepositoryRequest) (*operation.Operation, error)
 	// DeleteRepository — async, reject-if-tags (D-4). Пустой durable → снимает overlay
 	// + unregister FGA repo-tuples (same-registry only, ban #4); не-пустой → Operation
 	// error FAILED_PRECONDITION "repository is not empty" (проверка emptiness в worker'е).
 	// Handler: per-repo v_delete Check синхронно ДО LRO; unauthorized|absent → sync
 	// NOT_FOUND, Operation НЕ создаётся (A15 — как DeleteTag).
+	// Bare `{repository=**}` catch-all — объявлен ПЕРЕД sub-resource'ами (precedence).
 	DeleteRepository(context.Context, *DeleteRepositoryRequest) (*operation.Operation, error)
+	// ListTags — sync-проекция тегов repo из zot. Per-repo Check v_list на
+	// registry_repository в handler'е → gateway <exempt>. Sub-resource `…/tags` —
+	// объявлен ПОСЛЕ GetRepository catch-all'а → пробуется РАНЬШЕ, не затеняется
+	// (см. блок-заголовок «ПОРЯДОК ОБЪЯВЛЕНИЯ ЗНАЧИМ»).
+	ListTags(context.Context, *ListTagsRequest) (*ListTagsResponse, error)
+	// DeleteTag — async, единственный destructive-путь для образов (data-plane
+	// DELETE отвергается 405). Per-repo v_delete Check синхронно в handler'е ДО
+	// создания Operation → gateway <exempt>. Sub-resource `…/tags/{tag}` — объявлен
+	// ПОСЛЕ DeleteRepository catch-all'а → пробуется РАНЬШЕ, не затеняется.
+	DeleteTag(context.Context, *DeleteTagRequest) (*operation.Operation, error)
 	// RenameRepository — async, в пределах ОДНОГО реестра (new_name — голое repo-имя;
 	// cross-registry rename структурно невыразим, D-5). Durable → re-key overlay-имя
 	// (UPDATE); ephemeral → auto-promote в durable (INSERT). Engine re-home тегов/
 	// манифестов/referrers, старое имя → 404. Целевое имя занято → ALREADY_EXISTS;
 	// malformed|no-op new_name → INVALID_ARGUMENT; движок недоступен в середине remap →
 	// Operation error UNAVAILABLE fail-closed (без частичного rename, A21). Handler:
-	// v_update@repo + v_create@registry; deny|absent → NOT_FOUND.
+	// v_update@repo + v_create@registry; deny|absent → NOT_FOUND. Verb-action
+	// `:rename` — объявлен ПОСЛЕ catch-all'ов → пробуется РАНЬШЕ (precedence).
 	RenameRepository(context.Context, *RenameRepositoryRequest) (*operation.Operation, error)
 	// ListReferrers — sync-проекция referrer-графа одного subject_digest (D-8: bounded
 	// full-set, server-side cap как catalog-page; БЕЗ page_token/page_size — зеркалит
 	// OCI single-index /referrers/<digest>). Handler: per-repo v_get Check;
 	// unauthorized|absent repo → NOT_FOUND; subject без referrer'ов → пустой список (не 404).
+	// Sub-resource `…/referrers` — объявлен ПОСЛЕ catch-all'ов → пробуется РАНЬШЕ.
 	ListReferrers(context.Context, *ListReferrersRequest) (*ListReferrersResponse, error)
 	mustEmbedUnimplementedRegistryServiceServer()
 }
@@ -366,12 +382,6 @@ func (UnimplementedRegistryServiceServer) Delete(context.Context, *DeleteRegistr
 func (UnimplementedRegistryServiceServer) ListRepositories(context.Context, *ListRepositoriesRequest) (*ListRepositoriesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListRepositories not implemented")
 }
-func (UnimplementedRegistryServiceServer) ListTags(context.Context, *ListTagsRequest) (*ListTagsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListTags not implemented")
-}
-func (UnimplementedRegistryServiceServer) DeleteTag(context.Context, *DeleteTagRequest) (*operation.Operation, error) {
-	return nil, status.Error(codes.Unimplemented, "method DeleteTag not implemented")
-}
 func (UnimplementedRegistryServiceServer) ListOperations(context.Context, *ListRegistryOperationsRequest) (*ListRegistryOperationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListOperations not implemented")
 }
@@ -386,6 +396,12 @@ func (UnimplementedRegistryServiceServer) UpdateRepository(context.Context, *Upd
 }
 func (UnimplementedRegistryServiceServer) DeleteRepository(context.Context, *DeleteRepositoryRequest) (*operation.Operation, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteRepository not implemented")
+}
+func (UnimplementedRegistryServiceServer) ListTags(context.Context, *ListTagsRequest) (*ListTagsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTags not implemented")
+}
+func (UnimplementedRegistryServiceServer) DeleteTag(context.Context, *DeleteTagRequest) (*operation.Operation, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteTag not implemented")
 }
 func (UnimplementedRegistryServiceServer) RenameRepository(context.Context, *RenameRepositoryRequest) (*operation.Operation, error) {
 	return nil, status.Error(codes.Unimplemented, "method RenameRepository not implemented")
@@ -522,42 +538,6 @@ func _RegistryService_ListRepositories_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RegistryService_ListTags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListTagsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RegistryServiceServer).ListTags(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RegistryService_ListTags_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegistryServiceServer).ListTags(ctx, req.(*ListTagsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RegistryService_DeleteTag_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteTagRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RegistryServiceServer).DeleteTag(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RegistryService_DeleteTag_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegistryServiceServer).DeleteTag(ctx, req.(*DeleteTagRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _RegistryService_ListOperations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRegistryOperationsRequest)
 	if err := dec(in); err != nil {
@@ -648,6 +628,42 @@ func _RegistryService_DeleteRepository_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RegistryService_ListTags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTagsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistryServiceServer).ListTags(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RegistryService_ListTags_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistryServiceServer).ListTags(ctx, req.(*ListTagsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RegistryService_DeleteTag_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTagRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistryServiceServer).DeleteTag(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RegistryService_DeleteTag_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistryServiceServer).DeleteTag(ctx, req.(*DeleteTagRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _RegistryService_RenameRepository_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RenameRepositoryRequest)
 	if err := dec(in); err != nil {
@@ -716,14 +732,6 @@ var RegistryService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RegistryService_ListRepositories_Handler,
 		},
 		{
-			MethodName: "ListTags",
-			Handler:    _RegistryService_ListTags_Handler,
-		},
-		{
-			MethodName: "DeleteTag",
-			Handler:    _RegistryService_DeleteTag_Handler,
-		},
-		{
 			MethodName: "ListOperations",
 			Handler:    _RegistryService_ListOperations_Handler,
 		},
@@ -742,6 +750,14 @@ var RegistryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteRepository",
 			Handler:    _RegistryService_DeleteRepository_Handler,
+		},
+		{
+			MethodName: "ListTags",
+			Handler:    _RegistryService_ListTags_Handler,
+		},
+		{
+			MethodName: "DeleteTag",
+			Handler:    _RegistryService_DeleteTag_Handler,
 		},
 		{
 			MethodName: "RenameRepository",
