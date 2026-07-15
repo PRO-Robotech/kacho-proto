@@ -103,25 +103,6 @@ service RegistryService {
     option (kacho.iam.authz.v1.permission) = "<exempt>";
   }
 
-  // ListTags — sync-проекция тегов repo из zot. Per-repo Check v_list на
-  // registry_repository в handler'е → gateway <exempt>.
-  rpc ListTags(ListTagsRequest) returns (ListTagsResponse) {
-    option (google.api.http) = {get: "/registry/v1/registries/{registry_id}/repositories/{repository}/tags"};
-    option (kacho.iam.authz.v1.permission) = "<exempt>";
-  }
-
-  // DeleteTag — async, единственный destructive-путь для образов (data-plane
-  // DELETE отвергается 405). Per-repo v_delete Check синхронно в handler'е ДО
-  // создания Operation → gateway <exempt>.
-  rpc DeleteTag(DeleteTagRequest) returns (operation.Operation) {
-    option (google.api.http) = {delete: "/registry/v1/registries/{registry_id}/repositories/{repository}/tags/{tag}"};
-    option (kacho.cloud.api.operation) = {
-      metadata: "DeleteTagMetadata"
-      response: "google.protobuf.Empty"
-    };
-    option (kacho.iam.authz.v1.permission) = "<exempt>";
-  }
-
   // ListOperations — sync-история async-операций реестра (per-resource, фильтр по
   // resource_id=registry_id). Interceptor-gated per-RPC Check v_list на
   // registry_registry (как Get) → в allowlist как публичный gRPC-путь.
@@ -136,20 +117,33 @@ service RegistryService {
     option (kacho.iam.authz.v1.required_acr_min) = "2";
   }
 
-  // === Repository config-overlay (RG-1) ===================================
-  // Durable per-repo config (description/labels/visibility) поверх read-only
-  // zot-проекции; overlay ⟂ projection над натуральным ключом (registry_id,name).
-  // Read — sync; мутации — async→Operation (ban #9). Per-repo authz на
-  // COMPOSITE-объекте `registry_repository:<reg>/<repo>` НЕ выразим gateway
-  // scope_extractor'ом (тот берёт одно top-level поле) → все шесть RPC gateway
-  // `<exempt>`, а per-repo Check + existence-hiding выполняет handler (parity с
-  // ListTags/DeleteTag/ListRepositories). Deny на repo ИЛИ невидимый namespace →
-  // uniform NOT_FOUND "repository not found" (existence-hiding, security.md — НЕ
-  // PERMISSION_DENIED, иначе existence-oracle); admin-gate на visibility → handler
-  // отдаёт PERMISSION_DENIED (B02/B08, caller уже доказал доступ — код честен).
+  // === Repository-scoped RPC — ПОРЯДОК ОБЪЯВЛЕНИЯ ЗНАЧИМ (REST-precedence) =====
+  // grpc-gateway `ServeMux.Handle` PREPEND-ит хендлеры (newest-registered
+  // пробуется ПЕРВЫМ; runtime/mux.go), а сгенерированный `Register…Handler`
+  // регистрирует маршруты в порядке ОБЪЯВЛЕНИЯ RPC в этом service → объявленный
+  // ПОЗЖЕ пробуется РАНЬШЕ. Поэтому голые `{repository=**}` catch-all'ы
+  // (Get/Update/DeleteRepository) объявляются РАНЬШЕ более специфичных
+  // sub-resource-маршрутов (…/tags, …/tags/{tag}, …/referrers, :rename) —
+  // так sub-resource пробуется ПЕРВЫМ и не затеняется catch-all'ом. Иначе
+  // `GET …/{repo}/tags` перехватывался бы GetRepository (repository="web/tags"),
+  // а `DELETE …/{repo}/tags/{tag}` — DeleteRepository (REST-shadow-баг).
+  // НЕ пересортировывать по алфавиту/CRUD/группам — сломает REST-роутинг.
+  //
+  // Repository config-overlay (RG-1): durable per-repo config (description/
+  // labels/visibility) поверх read-only zot-проекции; overlay ⟂ projection над
+  // натуральным ключом (registry_id,name). Read — sync; мутации — async→Operation
+  // (ban #9). Per-repo authz на COMPOSITE-объекте `registry_repository:<reg>/<repo>`
+  // НЕ выразим gateway scope_extractor'ом (тот берёт одно top-level поле) → все
+  // repository-scoped RPC gateway `<exempt>`, а per-repo Check + existence-hiding
+  // выполняет handler (parity с ListRepositories). Deny на repo ИЛИ невидимый
+  // namespace → uniform NOT_FOUND "repository not found" (existence-hiding,
+  // security.md — НЕ PERMISSION_DENIED, иначе existence-oracle); admin-gate на
+  // visibility → handler отдаёт PERMISSION_DENIED (B02/B08, caller уже доказал
+  // доступ — код честен).
 
   // GetRepository — sync-чтение repo (overlay LEFT JOIN projection; durable
   // survives-empty). Handler: per-repo v_get Check; unauthorized|absent → NOT_FOUND.
+  // Bare `{repository=**}` catch-all — объявлен ПЕРЕД sub-resource'ами (precedence).
   rpc GetRepository(GetRepositoryRequest) returns (Repository) {
     option (google.api.http) = {get: "/registry/v1/registries/{registry_id}/repositories/{repository=**}"};
     option (kacho.iam.authz.v1.permission) = "<exempt>";
@@ -175,6 +169,7 @@ service RegistryService {
   // name immutable → RenameRepository). Handler: per-repo v_update Check; visibility
   // в mask → registry admin (B02 → PERMISSION_DENIED). Promote ephemeral→durable
   // (overlay upsert). Deny|absent → NOT_FOUND.
+  // Bare `{repository=**}` catch-all — объявлен ПЕРЕД sub-resource'ами (precedence).
   rpc UpdateRepository(UpdateRepositoryRequest) returns (operation.Operation) {
     option (google.api.http) = {
       patch: "/registry/v1/registries/{registry_id}/repositories/{repository=**}"
@@ -192,10 +187,33 @@ service RegistryService {
   // error FAILED_PRECONDITION "repository is not empty" (проверка emptiness в worker'е).
   // Handler: per-repo v_delete Check синхронно ДО LRO; unauthorized|absent → sync
   // NOT_FOUND, Operation НЕ создаётся (A15 — как DeleteTag).
+  // Bare `{repository=**}` catch-all — объявлен ПЕРЕД sub-resource'ами (precedence).
   rpc DeleteRepository(DeleteRepositoryRequest) returns (operation.Operation) {
     option (google.api.http) = {delete: "/registry/v1/registries/{registry_id}/repositories/{repository=**}"};
     option (kacho.cloud.api.operation) = {
       metadata: "DeleteRepositoryMetadata"
+      response: "google.protobuf.Empty"
+    };
+    option (kacho.iam.authz.v1.permission) = "<exempt>";
+  }
+
+  // ListTags — sync-проекция тегов repo из zot. Per-repo Check v_list на
+  // registry_repository в handler'е → gateway <exempt>. Sub-resource `…/tags` —
+  // объявлен ПОСЛЕ GetRepository catch-all'а → пробуется РАНЬШЕ, не затеняется
+  // (см. блок-заголовок «ПОРЯДОК ОБЪЯВЛЕНИЯ ЗНАЧИМ»).
+  rpc ListTags(ListTagsRequest) returns (ListTagsResponse) {
+    option (google.api.http) = {get: "/registry/v1/registries/{registry_id}/repositories/{repository}/tags"};
+    option (kacho.iam.authz.v1.permission) = "<exempt>";
+  }
+
+  // DeleteTag — async, единственный destructive-путь для образов (data-plane
+  // DELETE отвергается 405). Per-repo v_delete Check синхронно в handler'е ДО
+  // создания Operation → gateway <exempt>. Sub-resource `…/tags/{tag}` — объявлен
+  // ПОСЛЕ DeleteRepository catch-all'а → пробуется РАНЬШЕ, не затеняется.
+  rpc DeleteTag(DeleteTagRequest) returns (operation.Operation) {
+    option (google.api.http) = {delete: "/registry/v1/registries/{registry_id}/repositories/{repository}/tags/{tag}"};
+    option (kacho.cloud.api.operation) = {
+      metadata: "DeleteTagMetadata"
       response: "google.protobuf.Empty"
     };
     option (kacho.iam.authz.v1.permission) = "<exempt>";
@@ -207,7 +225,8 @@ service RegistryService {
   // манифестов/referrers, старое имя → 404. Целевое имя занято → ALREADY_EXISTS;
   // malformed|no-op new_name → INVALID_ARGUMENT; движок недоступен в середине remap →
   // Operation error UNAVAILABLE fail-closed (без частичного rename, A21). Handler:
-  // v_update@repo + v_create@registry; deny|absent → NOT_FOUND.
+  // v_update@repo + v_create@registry; deny|absent → NOT_FOUND. Verb-action
+  // `:rename` — объявлен ПОСЛЕ catch-all'ов → пробуется РАНЬШЕ (precedence).
   rpc RenameRepository(RenameRepositoryRequest) returns (operation.Operation) {
     option (google.api.http) = {
       post: "/registry/v1/registries/{registry_id}/repositories/{repository=**}:rename"
@@ -224,6 +243,7 @@ service RegistryService {
   // full-set, server-side cap как catalog-page; БЕЗ page_token/page_size — зеркалит
   // OCI single-index /referrers/<digest>). Handler: per-repo v_get Check;
   // unauthorized|absent repo → NOT_FOUND; subject без referrer'ов → пустой список (не 404).
+  // Sub-resource `…/referrers` — объявлен ПОСЛЕ catch-all'ов → пробуется РАНЬШЕ.
   rpc ListReferrers(ListReferrersRequest) returns (ListReferrersResponse) {
     option (google.api.http) = {get: "/registry/v1/registries/{registry_id}/repositories/{repository=**}/referrers"};
     option (kacho.iam.authz.v1.permission) = "<exempt>";
